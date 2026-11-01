@@ -38,6 +38,7 @@ Accueil : Bière · Soft · Alcool au verre · Bouteille
  └─ Bouteille → 140 € · 120 € · 90 €, rangées par prix
                puis « Combien de verres ? » (1 à 10, 4 par défaut)
                puis « Quels softs ? » : chaque tap sur un soft ajoute 1 (ex. 2 Coca-Cola + 1 Red Bull)
+               5 softs inclus ; à partir du 6e, +5 € par soft (compteur « 3/5 » qui passe en orange au-delà)
                (Champagne Moët : on demande le nombre de flûtes, pas de softs)
                Ligne de commande : « Bouteille Vodka · 6 verres · 2 Coca-Cola, 1 Red Bull · 90 € »
 Barre du bas (toujours visible) : nb d'articles + total → Commande
@@ -62,11 +63,10 @@ Une commande d'exemple (2 Heineken + 1 Vodka-Énergisant) est préchargée pour 
 ## Questions ouvertes (à valider par Loïc)
 
 Réglé : liste des softs (Perrier, Coca-Cola, Red Bull, Schweppes, jus orange/pomme/ananas), Desperados Original et Rouge,
-bouteille = nombre de verres + softs.
+bouteille = nombre de verres + softs, 5 softs inclus avec une bouteille, Desperados Rouge à 7 €.
 
-1. **Softs avec une bouteille** : inclus dans le prix, ou facturés en plus ? (la maquette les considère inclus)
-2. **Prix des Desperados Rouge** : 7 € comme l'Original ? (supposé dans la maquette)
-3. **« William »** : William Peel ou William Lawson's ?
+1. **Softs au-delà de 5 avec une bouteille** : 5 € chacun comme un soft seul ? (supposé dans la maquette)
+2. **« William »** : William Peel ou William Lawson's ?
 4. **Schweppes** : un seul parfum (tonic ? agrumes ?) ou plusieurs ?
 5. **Photos** : prendre en photo les bouteilles derrière le bar pour remplacer les pastilles de couleur (meilleure reconnaissance).
 6. **Paiement** : uniquement espèces, ou carte aussi ? (garder ou non l'écran de rendu monnaie)
