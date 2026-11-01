@@ -1,0 +1,413 @@
+{
+  "softSupplement": 5,
+  "bottleIncludedSofts": 5,
+  "beers": [
+    {
+      "id": "heineken",
+      "name": "Heineken",
+      "size": "25 cl",
+      "price": 5,
+      "bg": "#0A6B35",
+      "fg": "#FFFFFF",
+      "logo": "star",
+      "wide": true,
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "desperados",
+      "name": "Desperados",
+      "label": "Desperados Original",
+      "size": "Original · 33 cl",
+      "price": 7,
+      "bg": "#111111",
+      "fg": "#F4C430",
+      "logo": "d",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "desperados-rouge",
+      "name": "Desperados",
+      "label": "Desperados Rouge",
+      "size": "Rouge · 33 cl",
+      "price": 7,
+      "bg": "#B3121B",
+      "fg": "#FFFFFF",
+      "logo": "dred",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "guinness",
+      "name": "Guinness",
+      "size": "33 cl",
+      "price": 7,
+      "bg": "#0B0806",
+      "fg": "#E9D9A8",
+      "logo": "foam",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "corona",
+      "name": "Corona",
+      "size": "35 cl",
+      "price": 7,
+      "bg": "#F6EFD6",
+      "fg": "#123C8C",
+      "logo": "crown",
+      "image": null,
+      "available": true
+    }
+  ],
+  "softs": [
+    {
+      "id": "coca",
+      "name": "Coca-Cola",
+      "size": "Soda",
+      "price": 5,
+      "bg": "#E41E2B",
+      "fg": "#FFFFFF",
+      "logo": "bubbles",
+      "mixer": true,
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "schweppes",
+      "name": "Schweppes",
+      "size": "Tonic",
+      "price": 5,
+      "bg": "#FFD200",
+      "fg": "#1B1B1B",
+      "logo": "bubbles",
+      "mixer": true,
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "perrier",
+      "name": "Perrier",
+      "size": "Eau gazeuse",
+      "price": 5,
+      "bg": "#0B6B3A",
+      "fg": "#F3E7A6",
+      "logo": "bubbles",
+      "mixer": true,
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "orange",
+      "name": "Jus d’orange",
+      "size": "Jus",
+      "price": 5,
+      "bg": "#FF8A00",
+      "fg": "#2A1300",
+      "logo": "slice",
+      "mixer": true,
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "pomme",
+      "name": "Jus de pomme",
+      "size": "Jus",
+      "price": 5,
+      "bg": "#8BC34A",
+      "fg": "#13240A",
+      "logo": "slice",
+      "mixer": true,
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "ananas",
+      "name": "Jus d’ananas",
+      "size": "Jus",
+      "price": 5,
+      "bg": "#F5C518",
+      "fg": "#2A1F00",
+      "logo": "slice",
+      "mixer": true,
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "redbull",
+      "name": "Red Bull",
+      "size": "Énergisant",
+      "price": 5,
+      "bg": "#0F1E5A",
+      "fg": "#FFFFFF",
+      "logo": "bolt",
+      "mixer": true,
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "eau",
+      "name": "Eau",
+      "size": "Bouteille 50 cl",
+      "price": 3,
+      "bg": "#DDF1FF",
+      "fg": "#0B3A66",
+      "logo": "drop",
+      "mixer": false,
+      "image": null,
+      "available": true
+    }
+  ],
+  "bottleJuices": [
+    "orange",
+    "pomme",
+    "ananas"
+  ],
+  "spirits": [
+    {
+      "id": "vodka",
+      "name": "Vodka",
+      "price": 10,
+      "liquid": "#DCEBFF",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "rhum",
+      "name": "Rhum",
+      "price": 10,
+      "liquid": "#D07A2D",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "whisky",
+      "name": "Whisky",
+      "liquid": "#C98A2E",
+      "children": [
+        {
+          "id": "redlabel",
+          "name": "Red Label",
+          "price": 10,
+          "image": null,
+          "available": true
+        },
+        {
+          "id": "jb",
+          "name": "J&B",
+          "price": 10,
+          "image": null,
+          "available": true
+        },
+        {
+          "id": "jack",
+          "name": "Jack Daniel’s",
+          "price": 12,
+          "image": null,
+          "available": true
+        },
+        {
+          "id": "black",
+          "name": "Black Label",
+          "price": 15,
+          "image": null,
+          "available": true
+        }
+      ],
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "tequila",
+      "name": "Tequila",
+      "price": 10,
+      "liquid": "#E8D36A",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "gin",
+      "name": "Gin",
+      "price": 10,
+      "liquid": "#A6E3D4",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "cognac",
+      "name": "Cognac Hennessy",
+      "short": "Hennessy",
+      "price": 15,
+      "liquid": "#9A4416",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "get",
+      "name": "Get",
+      "liquid": "#3CCB7F",
+      "children": [
+        {
+          "id": "get27",
+          "name": "Get 27",
+          "price": 10,
+          "liquid": "#3CCB7F",
+          "image": null,
+          "available": true
+        },
+        {
+          "id": "get31",
+          "name": "Get 31",
+          "price": 10,
+          "liquid": "#F2F2F2",
+          "image": null,
+          "available": true
+        }
+      ],
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "jager",
+      "name": "Jäger­meister",
+      "short": "Jägermeister",
+      "price": 10,
+      "liquid": "#5A3A12",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "baileys",
+      "name": "Baileys",
+      "price": 10,
+      "liquid": "#E8D2B0",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "caipi",
+      "name": "Caïpi maracuja",
+      "price": 10,
+      "liquid": "#F2A900",
+      "noSoft": true,
+      "note": "Cocktail maison",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": "champ",
+      "name": "Coupe de champagne",
+      "short": "Coupe champagne",
+      "price": 20,
+      "liquid": "#F2D27A",
+      "glass": "flute",
+      "noSoft": true,
+      "wide": true,
+      "image": null,
+      "available": true
+    }
+  ],
+  "bottles": [
+    {
+      "price": 140,
+      "items": [
+        {
+          "id": "hennessy",
+          "name": "Cognac Hennessy",
+          "image": null,
+          "available": true
+        },
+        {
+          "id": "black-label",
+          "name": "Whisky Black Label",
+          "image": null,
+          "available": true
+        }
+      ]
+    },
+    {
+      "price": 120,
+      "items": [
+        {
+          "id": "moet",
+          "name": "Champagne Moët",
+          "champagne": true,
+          "image": null,
+          "available": true
+        },
+        {
+          "id": "jack-daniels",
+          "name": "Jack Daniel’s",
+          "image": null,
+          "available": true
+        }
+      ]
+    },
+    {
+      "price": 90,
+      "items": [
+        {
+          "id": "vodka",
+          "name": "Vodka",
+          "image": null,
+          "available": true
+        },
+        {
+          "id": "tequila",
+          "name": "Tequila",
+          "image": null,
+          "available": true
+        },
+        {
+          "id": "rhum",
+          "name": "Rhum",
+          "image": null,
+          "available": true
+        },
+        {
+          "id": "baileys",
+          "name": "Baileys",
+          "image": null,
+          "available": true
+        },
+        {
+          "id": "gin",
+          "name": "Gin",
+          "image": null,
+          "available": true
+        },
+        {
+          "id": "jagermeister",
+          "name": "Jägermeister",
+          "image": null,
+          "available": true
+        },
+        {
+          "id": "get27",
+          "name": "Get 27",
+          "image": null,
+          "available": true
+        },
+        {
+          "id": "get31",
+          "name": "Get 31",
+          "image": null,
+          "available": true
+        },
+        {
+          "id": "red-label",
+          "name": "Red Label",
+          "image": null,
+          "available": true
+        },
+        {
+          "id": "jb",
+          "name": "J&B",
+          "image": null,
+          "available": true
+        }
+      ]
+    }
+  ]
+}

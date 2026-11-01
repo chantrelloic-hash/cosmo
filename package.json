@@ -1,0 +1,16 @@
+{
+  "name": "cosmo-commande",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Appli de prise de commande du Cosmo (PWA, sans build)",
+  "scripts": {
+    "test:unit": "node --test \"tests/unit/*.test.js\"",
+    "test:e2e": "playwright test",
+    "test": "npm run test:unit && npm run test:e2e",
+    "serve": "python3 -m http.server 8080 --directory app"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}
