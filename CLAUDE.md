@@ -4,33 +4,11 @@ Appli de prise de commande pour le **Cosmo**, boîte de nuit à Kourou (Guyane).
 il tourne l'écran du téléphone vers le client, qui montre du doigt sa boisson, puis on lui montre le total en très gros.
 Tout l'interface est **en français**. Loïc n'est pas développeur : lui parler simplement, en français.
 
-## Passage de relais (à faire en premier)
+## Mise en ligne
 
-**Seule tâche restante : mettre l'appli en ligne sur GitHub Pages.** Tout le reste est fait, fusionné dans `main` et testé.
-
-Situation au 1er novembre 2026 :
-- Le workflow `.github/workflows/pages.yml` (« Mise en ligne (GitHub Pages) ») a tourné après la fusion de la PR #1.
-  Le job `test` est vert, le job `deploy` a échoué à l'étape `actions/configure-pages@v5` parce que **GitHub Pages n'est pas activé**
-  sur le dépôt (run 41293441058).
-- Le dépôt `chantrelloic-hash/cosmo` est **privé**. Sur un compte GitHub gratuit, Pages n'est pas disponible pour un dépôt privé.
-- La session cloud précédente ne pouvait ni changer les réglages du dépôt ni piloter un navigateur connecté à GitHub.
-  Loïc a ouvert cette session locale pour que ces clics soient faits dans son navigateur (Claude in Chrome, où il est connecté à GitHub).
-
-À faire, dans l'ordre :
-1. **Rendre le dépôt public** (Loïc l'a demandé ; ne le fais qu'avec sa confirmation dans cette session si elle n'est pas déjà donnée) :
-   https://github.com/chantrelloic-hash/cosmo/settings → Danger Zone → « Change visibility » → « Change to public » → confirmer.
-   Le dépôt ne contient aucun secret : seulement le code, la carte et le code d'accès par défaut des réglages (1234), visible de toute façon dans l'appli.
-   Si Loïc préfère rester en privé : soit GitHub Pro, soit un autre hébergeur gratuit (Netlify ou Cloudflare Pages, en servant le dossier `app/` tel quel, sans build).
-2. **Activer Pages** : https://github.com/chantrelloic-hash/cosmo/settings/pages → Source : **GitHub Actions**.
-3. **Relancer le déploiement** : https://github.com/chantrelloic-hash/cosmo/actions/workflows/pages.yml → « Run workflow » sur `main`
-   (le workflow a `workflow_dispatch`), ou « Re-run failed jobs » sur le run échoué.
-4. **Vérifier** que https://chantrelloic-hash.github.io/cosmo/ répond 200 (titre « Cosmo Commande »), que `menu.json` répond 200,
-   et ouvrir l'appli : l'accueil affiche Bière / Soft / Alcool au verre / Bouteille, sans erreur console.
-5. **Dire à Loïc comment l'installer** sur son téléphone :
-   - iPhone : ouvrir le lien dans Safari → Partager → « Sur l'écran d'accueil ».
-   - Android : ouvrir le lien dans Chrome → menu ⋮ → « Installer l'application ».
-   - Lui rappeler de changer le code des réglages (appui long sur « COSMO », code 1234 par défaut).
-6. Mettre à jour cette section (« Passage de relais ») pour dire que c'est en ligne, et la raccourcir.
+**L'appli est en ligne** : https://chantrelloic-hash.github.io/cosmo/ (dépôt public, Pages source « GitHub Actions », déploiement automatique à chaque push sur `main`).
+Vérifié le 1er novembre 2026 : page et `menu.json` répondent 200, accueil Bière / Soft / Alcool au verre / Bouteille, aucune erreur console.
+Installation : iPhone, Safari → Partager → « Sur l'écran d'accueil » ; Android, Chrome → ⋮ → « Installer l'application ». Rappeler à Loïc de changer le code des réglages (appui long sur « COSMO », 1234 par défaut).
 
 ## Structure
 
