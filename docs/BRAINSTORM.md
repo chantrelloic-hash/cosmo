@@ -29,9 +29,9 @@ on confirme en lui montrant le total en très gros. Zéro texte à lire de près
 ```
 Accueil : Bière · Soft · Alcool au verre · Bouteille
  ├─ Bière   → Heineken 5 € · Desperados Original 7 € · Desperados Rouge 7 € · Guinness 7 € · Corona 7 €   (tap = +1)
- ├─ Soft    → Coca-Cola · Schweppes · Perrier · Jus d'orange · Jus de pomme · Jus d'ananas · Red Bull (5 €) · Eau 50 cl (3 €)
+ ├─ Soft    → Coca-Cola · Schweppes Tonic · Perrier · Jus d'orange · Jus de pomme · Jus d'ananas · Red Bull (5 €) · Eau 50 cl (3 €)
  ├─ Alcool  → Vodka · Rhum · Whisky ▸ · Tequila · Gin · Hennessy · Get ▸ · Jäger · Baileys · Coupe champagne
- │             Whisky ▸ Red Label 10 · J&B 10 · William 10 · Jack Daniel's 12 · Black Label 15
+ │             Whisky ▸ Red Label 10 · J&B 10 · Jack Daniel's 12 · Black Label 15
  │             Get ▸ Get 27 · Get 31
  │             puis « Avec un soft ? »  →  Non, sec (prix alcool)  |  Oui (+5 €) → un des 7 softs (tous sauf l'eau)
  │             (la coupe de champagne n'a pas la question du soft)
@@ -52,7 +52,7 @@ Encaisser : on tape les billets reçus (5/10/20/50/100) → « À rendre » en g
 
 | Alcool | Sec | Avec soft (+5 €) |
 |---|---|---|
-| Autres alcools (vodka, rhum, tequila, gin, Get, Jäger, Baileys, Red Label, J&B, William) | 10 € | 15 € |
+| Autres alcools (vodka, rhum, tequila, gin, Get, Jäger, Baileys, Red Label, J&B) | 10 € | 15 € |
 | Jack Daniel's | 12 € | 17 € |
 | Hennessy, Black Label | 15 € | 20 € |
 | Coupe de champagne | 20 € | sans objet |
@@ -64,15 +64,13 @@ Une commande d'exemple (2 Heineken + 1 Vodka-Énergisant) est préchargée pour 
 
 ## Questions ouvertes (à valider par Loïc)
 
-Réglé : liste des softs (Perrier, Coca-Cola, Red Bull, Schweppes, jus orange/pomme/ananas), Desperados Original et Rouge,
-bouteille = nombre de verres + (5 softs ou 1 bouteille de jus) inclus, Desperados Rouge à 7 €.
+Réglé : liste des softs (Perrier, Coca-Cola, Red Bull, Schweppes Tonic, jus orange/pomme/ananas), Desperados Original et Rouge à 7 €,
+bouteille = nombre de verres + (5 softs ou 1 bouteille de jus) inclus, +5 € par soft au-delà de 5,
+« William » retiré de la carte (c'était une erreur).
 
-1. **Softs au-delà de 5 avec une bouteille** : 5 € chacun comme un soft seul ? (supposé dans la maquette)
-2. **« William »** : William Peel ou William Lawson's ?
-4. **Schweppes** : un seul parfum (tonic ? agrumes ?) ou plusieurs ?
-5. **Photos** : prendre en photo les bouteilles derrière le bar pour remplacer les pastilles de couleur (meilleure reconnaissance).
-6. **Paiement** : uniquement espèces, ou carte aussi ? (garder ou non l'écran de rendu monnaie)
-7. **Un seul téléphone** ou plusieurs serveurs ? (si plusieurs : historique / total de la soirée par serveur ?)
+1. **Photos** : prendre en photo les bouteilles derrière le bar pour remplacer les pastilles de couleur (meilleure reconnaissance).
+2. **Paiement** : uniquement espèces, ou carte aussi ? (garder ou non l'écran de rendu monnaie)
+3. **Un seul téléphone** ou plusieurs serveurs ? (si plusieurs : historique / total de la soirée par serveur ?)
 
 ## Plan de réalisation (lots pour les sous-agents)
 
