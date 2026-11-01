@@ -82,9 +82,12 @@ hors ligne via service worker, hébergée gratuitement (GitHub Pages). Pas de se
    icônes, service worker (cache complet), déploiement GitHub Pages.
 2. **Lot 2 — Carte en données** : sortir la carte dans `menu.json` (familles, produits, prix, couleurs, image optionnelle,
    `noSoft`, supplément soft). Le rendu lit ce fichier.
-3. **Lot 3 — Photos** : support d'une image par produit (`images/heineken.webp`…) avec repli sur la pastille couleur.
-4. **Lot 4 — Écran réglages (protégé par code)** : modifier prix / activer-désactiver un produit en rupture,
+3. **Lot 3 — Photos (fait)** : support d'une image par produit (`images/heineken.webp`…) avec repli sur la pastille couleur.
+4. **Lot 4 — Écran réglages protégé par code (fait)** : modifier prix / activer-désactiver un produit en rupture,
    sauvegarde locale (localStorage).
-5. **Lot 5 — Confort de service** : commande conservée si l'appli est fermée par erreur, vibration au tap,
+   *Réalisé* : appui long sur le logo, code 4 chiffres (1234 par défaut), rupture = carte grisée « Rupture », prix, supplément soft,
+   softs inclus, bouton « Remettre la carte d'origine ». Surcouches dans `cosmo.overrides.v1` (voir `app/MENU.md`).
+5. **Lot 5 — Confort de service (fait)** : commande conservée si l'appli est fermée par erreur, vibration au tap,
    annuler le dernier ajout, mode gaucher (barre à gauche).
+   *Réalisé* : commande dans `cosmo.order.v1`, vibration 15 ms, « Annuler » dans le toast (3 s), mode gaucher dans les réglages.
 6. **Lot 6 — Tests** : tests unitaires des calculs (total, supplément soft, rendu monnaie) + test Playwright du parcours complet.

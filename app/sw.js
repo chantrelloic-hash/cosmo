@@ -1,8 +1,10 @@
 /* Service worker Cosmo Commande : l'appli fonctionne 100 % hors ligne.
    Tous les chemins sont relatifs : l'appli peut être servie sous un sous-chemin (ex. /cosmo/). */
-const CACHE_VERSION = 'v1'; // À INCRÉMENTER à chaque release (v2, v3...) pour que les téléphones se mettent à jour
+const CACHE_VERSION = 'v2'; // À INCRÉMENTER à chaque release (v2, v3...) pour que les téléphones se mettent à jour
 const SHELL_CACHE = `cosmo-shell-${CACHE_VERSION}`;
 const FONT_CACHE = 'cosmo-fonts'; // polices Google : conservées d'une version à l'autre
+const IMAGE_CACHE = 'cosmo-images'; // photos des produits (images/) : mises en cache à la première utilisation
+const MENU_TIMEOUT = 2000; // menu.json : au-delà de 2 s sans réponse du réseau, on sert la copie en cache
 
 const SHELL = [
   './',
@@ -10,6 +12,7 @@ const SHELL = [
   'styles.css',
   'app.js',
   'pricing.js',
+  'store.js',
   'menu.json',
   'manifest.webmanifest',
   'icons/icon.svg',
@@ -31,7 +34,7 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(keys
-        .filter(k => k !== SHELL_CACHE && k !== FONT_CACHE)
+        .filter(k => k !== SHELL_CACHE && k !== FONT_CACHE && k !== IMAGE_CACHE)
         .map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
@@ -62,10 +65,43 @@ async function cacheFirst(request) {
   }
 }
 
+/* menu.json : réseau d'abord (une carte à jour dès que le téléphone est en ligne, sans nouvelle version
+   de l'appli), repli sur la copie en cache si le réseau est absent ou met plus de MENU_TIMEOUT à répondre.
+   La requête réseau continue en arrière-plan et met le cache à jour même après le délai. */
+async function menuNetworkFirst(event) {
+  const {request} = event;
+  const cache = await caches.open(SHELL_CACHE);
+  const network = fetch(request, {cache: 'no-cache'}).then(res => {
+    if (res.ok) cache.put('menu.json', res.clone());
+    return res;
+  });
+  event.waitUntil(network.catch(() => null));
+  const timeout = new Promise(resolve => setTimeout(() => resolve(null), MENU_TIMEOUT));
+  const first = await Promise.race([network.catch(() => null), timeout]);
+  if (first && first.ok) return first;
+  const cached = await cache.match('menu.json');
+  if (cached) return cached;
+  return first || network; // pas de copie : on attend le réseau (ou l'erreur)
+}
+
+/* Photos des produits : cache-first, remplies à la première utilisation (puis disponibles hors ligne).
+   Une image absente (404) n'est pas mise en cache : l'appli retombe sur le picto. */
+async function imageCacheFirst(request) {
+  const cache = await caches.open(IMAGE_CACHE);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  const res = await fetch(request);
+  if (res.ok) cache.put(request, res.clone());
+  return res;
+}
+
 self.addEventListener('fetch', event => {
   const {request} = event;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (isFont(url)) event.respondWith(staleWhileRevalidate(request));
-  else if (url.origin === self.location.origin) event.respondWith(cacheFirst(request));
+  else if (url.origin !== self.location.origin) return;
+  else if (url.pathname.endsWith('/menu.json')) event.respondWith(menuNetworkFirst(event));
+  else if (/\/images\/[^/]+\.(webp|jpe?g|png|avif|gif|svg)$/i.test(url.pathname)) event.respondWith(imageCacheFirst(request));
+  else event.respondWith(cacheFirst(request));
 });
