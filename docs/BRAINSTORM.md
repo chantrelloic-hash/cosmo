@@ -90,4 +90,7 @@ hors ligne via service worker, hébergée gratuitement (GitHub Pages). Pas de se
 5. **Lot 5 — Confort de service (fait)** : commande conservée si l'appli est fermée par erreur, vibration au tap,
    annuler le dernier ajout, mode gaucher (barre à gauche).
    *Réalisé* : commande dans `cosmo.order.v1`, vibration 15 ms, « Annuler » dans le toast (3 s), mode gaucher dans les réglages.
-6. **Lot 6 — Tests** : tests unitaires des calculs (total, supplément soft, rendu monnaie) + test Playwright du parcours complet.
+6. **Lot 6 — Tests, CI et mise en ligne (fait)** : tests unitaires des calculs et de `menu.json` (`tests/unit/`, node:test),
+   tests Playwright du parcours complet, des réglages, du hors ligne et de la mise en page mobile (`tests/e2e/`, viewport 390x844),
+   CI GitHub Actions (`.github/workflows/ci.yml`) et déploiement GitHub Pages depuis `app/` (`.github/workflows/pages.yml`).
+   *Reste à faire par Loïc* : activer Settings → Pages → Source « GitHub Actions » (voir `README.md`).
