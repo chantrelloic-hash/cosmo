@@ -3,6 +3,12 @@ import {
   parsePrice, applyOverride, mergeOverride, sanitizeOverrides, removeOne, sanitizeOrder,
 } from './pricing.js';
 import { KEYS, read, write, remove } from './store.js';
+import { t, w, isLang, LANGS, LANG_NAMES, HTML_LANG, DEFAULT_LANG } from './i18n.js';
+
+/* Langue de l'écran client (préférence mémorisée dans `prefs`, définie plus bas) */
+const lang = () => isLang(prefs.lang) ? prefs.lang : DEFAULT_LANG;
+const T = (key, ...args) => t(lang(), key, ...args);
+const W = text => w(lang(), text);
 
 /* ============ CARTE (chargée depuis menu.json) ============ */
 let SOFT_SUPPLEMENT = 5;
@@ -84,7 +90,7 @@ const on = fn => `data-a="${A.push(fn)-1}"`;
 /** Attributs d'un bouton de produit : cliquable, ou grisé et inactif si le produit est en rupture. */
 const act = (item, fn) => item.soldOut ? 'disabled aria-disabled="true"' : on(fn);
 const outCls = item => item.soldOut ? ' out' : '';
-const outTag = item => item.soldOut ? '<span class="rupture">Rupture</span>' : '';
+const outTag = item => item.soldOut ? `<span class="rupture">${T('soldOut')}</span>` : '';
 /** Photo du produit (si `image`), avec repli silencieux sur le picto si elle ne charge pas ; sinon le picto d'origine. */
 function pic(item, plain, fallback, cls){
   if(!item.image) return plain;
@@ -123,7 +129,7 @@ let tT;
 /** Toast ~3 s ; avec `undo`, il porte un bouton « Annuler » (retire le dernier ajout). */
 function toast(t, undo){
   const el=document.getElementById('toast');
-  el.innerHTML = `<span class="tx">${esc(t)}</span>${undo?'<button type="button" class="undo" id="undo">Annuler</button>':''}`;
+  el.innerHTML = `<span class="tx">${esc(t)}</span>${undo?`<button type="button" class="undo" id="undo">${T('undo')}</button>`:''}`;
   el.classList.add('on'); el.classList.toggle('act', !!undo);
   clearTimeout(tT); tT=setTimeout(hideToast,3000);
 }
@@ -141,60 +147,61 @@ const V = {
     const fmt = ([a,b]) => a===b ? `${a} €` : `${a} – ${b} €`;
     const cat=(c,icon,name,r,v)=>`<button class="cat" style="--c:var(${c})" ${on(()=>go(v))}>${ICON[icon]}<span><span class="name">${name}</span><br><span class="range price-num">${r}</span></span></button>`;
     const bottlePrices = BOTTLES.map(t=>t.price);
-    return `<h1>Qu’est-ce que tu bois&nbsp;?</h1>
-      <p class="hint">Tourne l’écran vers le client : il montre du doigt.</p>
+    const langs = `<div class="langs" role="group" aria-label="${T('langLabel')}">${LANGS.map(l=>`<button class="lang" aria-label="${LANG_NAMES[l]}" aria-pressed="${lang()===l}" ${on(()=>setLang(l))}>${FLAG[l]}<span>${LANG_SHORT[l]}</span></button>`).join('')}</div>`;
+    return `${langs}<h1>${T('askDrink')}</h1>
+      <p class="hint">${T('hintHome')}</p>
       <div class="grid">
-        ${cat('--beer','beer','Bière',fmt(range(BEERS)),'beers')}
-        ${cat('--soft','can','Soft',fmt(range(SOFTS)),'softs')}
-        ${cat('--spirit','glass','Alcool au verre',fmt(range(SPIRITS)),'spirits')}
-        ${cat('--bottle','bottle','Bouteille',fmt([Math.min(...bottlePrices),Math.max(...bottlePrices)]),'bottles')}
+        ${cat('--beer','beer',T('catBeer'),fmt(range(BEERS)),'beers')}
+        ${cat('--soft','can',T('catSoft'),fmt(range(SOFTS)),'softs')}
+        ${cat('--spirit','glass',T('catSpirit'),fmt(range(SPIRITS)),'spirits')}
+        ${cat('--bottle','bottle',T('catBottle'),fmt([Math.min(...bottlePrices),Math.max(...bottlePrices)]),'bottles')}
       </div>`;
   },
-  beers(){ return `<h1>Bières</h1><p class="hint">En bouteille. Touche plusieurs fois pour en ajouter plusieurs.</p><div class="grid">${BEERS.map(b=>brandCard(b,'biere')).join('')}</div>`; },
-  softs(){ return `<h1>Softs</h1><p class="hint">Sans alcool.</p><div class="grid">${SOFTS.map(b=>brandCard(b,'soft')).join('')}</div>`; },
+  beers(){ return `<h1>${T('beersH1')}</h1><p class="hint">${T('beersHint')}</p><div class="grid">${BEERS.map(b=>brandCard(b,'biere')).join('')}</div>`; },
+  softs(){ return `<h1>${T('softsH1')}</h1><p class="hint">${T('softsHint')}</p><div class="grid">${SOFTS.map(b=>brandCard(b,'soft')).join('')}</div>`; },
   spirits(){
-    return `<h1>Alcool au verre</h1><p class="hint">Prix sans soft. Avec un soft : <b style="color:var(--soft)">+${SOFT_SUPPLEMENT}&nbsp;€</b></p>
+    return `<h1>${T('spiritsH1')}</h1><p class="hint">${T('spiritsHint',SOFT_SUPPLEMENT)}</p>
       <div class="grid">${SPIRITS.map(s=>{
         const prices = s.children ? s.children.map(c=>c.price) : [s.price];
         const min=Math.min(...prices), max=Math.max(...prices);
         const n = s.children ? s.children.reduce((t,c)=>t+qtyPrefix('verre:'+c.id),0) : qtyPrefix('verre:'+s.id);
         const wide = s.wide ? ' wide' : '';
-        const p2 = s.noSoft ? esc(s.note||'Servie seule') : s.children ? `${s.children.length} choix` : `avec soft <b>${eur(glassPrice(s.price,true,SOFT_SUPPLEMENT))}</b>`;
+        const p2 = s.noSoft ? esc(s.note ? W(s.note) : T('aloneDefault')) : s.children ? T('choices',s.children.length) : `${T('withSoft')} <b>${eur(glassPrice(s.price,true,SOFT_SUPPLEMENT))}</b>`;
         return `<button class="spirit${wide}${outCls(s)}" ${act(s,()=> s.children ? go('spiritSub',s) : pickSpirit(s))}>
           ${n?`<span class="qty">${n}</span>`:''}${outTag(s)}
           ${pic(s,glassIcon(s.liquid,s.glass),glassIcon(s.liquid,s.glass),'sp')}
-          <span class="grow"><span class="sname">${esc(s.name)}</span><br><span class="p2">${p2}</span></span>
+          <span class="grow"><span class="sname">${esc(W(s.name))}</span><br><span class="p2">${p2}</span></span>
           <span class="p1 price-num">${min===max?eur(min):`${min}–${max} €`}</span>
         </button>`;}).join('')}</div>`;
   },
   spiritSub(s){
-    return `<h1>${esc(s.name)}</h1><p class="hint">Quelle marque&nbsp;?</p>
+    return `<h1>${esc(W(s.name))}</h1><p class="hint">${T('whichBrand')}</p>
       <div class="grid">${s.children.map(c=>{
         const n=qtyPrefix('verre:'+c.id);
         return `<button class="spirit${outCls(c)}" ${act(c,()=>pickSpirit({...c, liquid:c.liquid||s.liquid, family:s.name}))}>
           ${n?`<span class="qty">${n}</span>`:''}${outTag(c)}
           ${pic(c,glassIcon(c.liquid||s.liquid),glassIcon(c.liquid||s.liquid),'sp')}
-          <span class="sname">${esc(c.name)}</span>
-          <span class="p2">avec soft <b>${eur(glassPrice(c.price,true,SOFT_SUPPLEMENT))}</b></span>
+          <span class="sname">${esc(W(c.name))}</span>
+          <span class="p2">${T('withSoft')} <b>${eur(glassPrice(c.price,true,SOFT_SUPPLEMENT))}</b></span>
           <span class="p1 price-num">${eur(c.price)}</span>
         </button>`;}).join('')}</div>`;
   },
   mixer(s){
-    const label = s.short||s.name;
-    return `<p class="ask">${esc(label)} : <em>avec un soft</em>&nbsp;?</p>
-      <button class="bigbtn" ${on(()=>{add({key:`verre:${s.id}:sec`,label,sub:'sec',price:glassPrice(s.price,false,SOFT_SUPPLEMENT)}); home();})}>
-        <span><span class="t">Non, sec</span><br><span class="s">Juste l’alcool</span></span>
+    const label = W(s.short||s.name);
+    return `<p class="ask">${T('askMixer',esc(label))}</p>
+      <button class="bigbtn" ${on(()=>{add({key:`verre:${s.id}:sec`,label,sub:T('dry'),price:glassPrice(s.price,false,SOFT_SUPPLEMENT)}); home();})}>
+        <span><span class="t">${T('noDry')}</span><br><span class="s">${T('justSpirit')}</span></span>
         <span class="p price-num">${eur(s.price)}</span>
       </button>
-      <div class="or">Oui, avec <b class="price-num">${eur(glassPrice(s.price,true,SOFT_SUPPLEMENT))}</b></div>
-      <div class="chips">${MIXERS.map(m=>`<button class="chip${m.id==='redbull'?' full':''}${outCls(m)}" style="--bg:${m.bg};--fg:${m.fg};color:${m.fg}" ${act(m,()=>{add({key:`verre:${s.id}:${m.id}`,label,sub:'+ '+m.name,price:glassPrice(s.price,true,SOFT_SUPPLEMENT)}); home();})}>${outTag(m)}${ICON[m.logo]}${esc(m.name)}</button>`).join('')}</div>`;
+      <div class="or">${T('yesWith')} <b class="price-num">${eur(glassPrice(s.price,true,SOFT_SUPPLEMENT))}</b></div>
+      <div class="chips">${MIXERS.map(m=>`<button class="chip${m.id==='redbull'?' full':''}${outCls(m)}" style="--bg:${m.bg};--fg:${m.fg};color:${m.fg}" ${act(m,()=>{add({key:`verre:${s.id}:${m.id}`,label,sub:'+ '+W(m.name),price:glassPrice(s.price,true,SOFT_SUPPLEMENT)}); home();})}>${outTag(m)}${ICON[m.logo]}${esc(W(m.name))}</button>`).join('')}</div>`;
   },
   bottles(){
-    return `<h1>Bouteilles</h1><p class="hint">Ensuite : nombre de verres et softs.</p>
-      ${BOTTLES.map(t=>`<div class="tier"><b class="price-num">${eur(t.price)}</b><span>la bouteille</span></div>
+    return `<h1>${T('bottlesH1')}</h1><p class="hint">${T('bottlesHint')}</p>
+      ${BOTTLES.map(t=>`<div class="tier"><b class="price-num">${eur(t.price)}</b><span>${T('perBottle')}</span></div>
         <div class="grid">${t.items.map(it=>{
           const key='bouteille:'+it.name, n=qtyPrefix(key+':');
-          return `<button class="bottle${outCls(it)}" ${act(it,()=>{state.bcfg={glasses:4,softs:{},mode:'softs',jus:null}; go('bottleSetup',{name:it.name,price:t.price,champagne:!!it.champagne});})}>${n?`<span class="qty">${n}</span>`:''}${outTag(it)}${pic(it,ICON.bottle,ICON.bottle,'bt')}<span>${esc(it.name)}</span></button>`;}).join('')}</div>`).join('')}`;
+          return `<button class="bottle${outCls(it)}" ${act(it,()=>{state.bcfg={glasses:4,softs:{},mode:'softs',jus:null}; go('bottleSetup',{name:it.name,price:t.price,champagne:!!it.champagne});})}>${n?`<span class="qty">${n}</span>`:''}${outTag(it)}${pic(it,ICON.bottle,ICON.bottle,'bt')}<span>${esc(W(it.name))}</span></button>`;}).join('')}</div>`).join('')}`;
   },
   bottleSetup(b){
     const c=state.bcfg, champ=b.champagne, jus=c.mode==='jus';
@@ -203,23 +210,23 @@ const V = {
     const price=bottlePrice(b.price,{mode:c.mode,champagne:champ,softCount:nSoft},BOTTLE_SOFTS,SOFT_SUPPLEMENT);
     const ready=champ||!jus||!!c.jus;
     const seg=(mode,t,st)=>`<button class="seg" aria-pressed="${c.mode===mode}" ${on(()=>{c.mode=mode; render(false);})}><b>${t}</b><small>${st}</small></button>`;
-    const chip=(m,n,fn,full)=>`<button class="chip${full?' full':''}${outCls(m)}" style="--bg:${m.bg};--fg:${m.fg};color:${m.fg}" ${act(m,fn)}>${n?`<span class="qty">${n}</span>`:''}${outTag(m)}${ICON[m.logo]}${esc(m.name)}</button>`;
+    const chip=(m,n,fn,full)=>`<button class="chip${full?' full':''}${outCls(m)}" style="--bg:${m.bg};--fg:${m.fg};color:${m.fg}" ${act(m,fn)}>${n?`<span class="qty">${n}</span>`:''}${outTag(m)}${ICON[m.logo]}${esc(W(m.name))}</button>`;
     let inclus='';
     if(!champ){
-      inclus = `<div class="sect">Inclus avec la bouteille</div>
-      <div class="segs">${seg('softs',`${BOTTLE_SOFTS} softs`,'au choix')}${seg('jus','1 bouteille','de jus')}</div>`;
+      inclus = `<div class="sect">${T('included')}</div>
+      <div class="segs">${seg('softs',T('softsN',BOTTLE_SOFTS),T('ofChoice'))}${seg('jus',T('oneBottle'),T('ofJuice'))}</div>`;
       inclus += jus
-        ? `<div class="sect">Quel jus&nbsp;?</div>
+        ? `<div class="sect">${T('whichJuice')}</div>
       <div class="chips">${JUS.map(m=>chip(m, c.jus===m.id?'✓':0, ()=>{c.jus=m.id; render(false);})).join('')}</div>`
-        : `<div class="sect"><span>Softs <span class="price-num" style="color:${extra?'var(--flame)':'var(--soft)'}">${nSoft}/${BOTTLE_SOFTS}</span></span>${nSoft?`<button ${on(()=>{c.softs={}; render(false);})}>Effacer</button>`:''}</div>
-      <p class="hint">Touche plusieurs fois pour en mettre plusieurs. Au-delà de ${BOTTLE_SOFTS} : +${SOFT_SUPPLEMENT}&nbsp;€ par soft.${extra?` <b style="color:var(--flame)">${extra} en plus : +${eur(extra*SOFT_SUPPLEMENT)}</b>`:''}</p>
+        : `<div class="sect"><span>${T('softsLabel')} <span class="price-num" style="color:${extra?'var(--flame)':'var(--soft)'}">${nSoft}/${BOTTLE_SOFTS}</span></span>${nSoft?`<button ${on(()=>{c.softs={}; render(false);})}>${T('clear')}</button>`:''}</div>
+      <p class="hint">${T('tapMany',BOTTLE_SOFTS,SOFT_SUPPLEMENT)}${extra?` <b style="color:var(--flame)">${T('extraMore',extra,eur(extra*SOFT_SUPPLEMENT))}</b>`:''}</p>
       <div class="chips">${MIXERS.map(m=>{const n=c.softs[m.id]||0; return chip(m,n,()=>{c.softs[m.id]=n+1; render(false);}, m.id==='redbull');}).join('')}</div>`;
     }
-    return `<h1>${esc(b.name)}</h1><p class="hint">Bouteille · <b class="price-num" style="color:var(--bottle)">${eur(b.price)}</b>${champ?'':` · ${BOTTLE_SOFTS} softs ou 1 bouteille de jus inclus`}</p>
-      <div class="sect">Combien de ${champ?'flûtes':'verres'}&nbsp;?</div>
+    return `<h1>${esc(W(b.name))}</h1><p class="hint">${T('bottleWord')} · <b class="price-num" style="color:var(--bottle)">${eur(b.price)}</b>${champ?'':T('softsOrJuice',BOTTLE_SOFTS)}</p>
+      <div class="sect">${T(champ?'howManyFlutes':'howManyGlasses')}</div>
       <div class="nums">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button class="num price-num" aria-pressed="${c.glasses===n}" ${on(()=>{c.glasses=n; render(false);})}>${n}</button>`).join('')}</div>
       ${inclus}
-      <div class="actions" style="margin-top:20px"><button class="cta" ${ready?'':'disabled'} ${on(()=>{ if(!ready) return; add(bottleItem(b,c)); state.stack.pop(); render(true);})}>${ready?`Ajouter la bouteille · ${eur(price)}`:'Choisis le jus'}</button></div>`;
+      <div class="actions" style="margin-top:20px"><button class="cta" ${ready?'':'disabled'} ${on(()=>{ if(!ready) return; add(bottleItem(b,c)); state.stack.pop(); render(true);})}>${ready?T('addBottle',eur(price)):T('chooseJuice')}</button></div>`;
   },
   order(){
     if(!state.order.length) return `<h1>Commande</h1><div class="empty">Rien pour l’instant.<br><br><button class="cta ghost" ${on(home)}>Choisir une boisson</button></div>`;
@@ -256,34 +263,36 @@ function brandCard(b,kind){
     ${b.logo==='foam'?'<span class="foam"></span>':''}
     ${n?`<span class="qty">${n}</span>`:''}${outTag(b)}
     ${pic(b,`<span class="logo">${ICON[b.logo]}</span>`,ICON[b.logo],'logo')}
-    <span><span class="bname">${esc(b.name)}</span><span class="size" style="display:block">${esc(b.size)}</span></span>
+    <span><span class="bname">${esc(W(b.name))}</span><span class="size" style="display:block">${esc(W(b.size))}</span></span>
     <span class="pill price-num">${eur(b.price)}</span>
   </button>`;
 }
 
 function bottleItem(b,c){
-  const champ=b.champagne, g=`${c.glasses} ${champ?'flûte':'verre'}${c.glasses>1?'s':''}`, label=`Bouteille ${b.name}`;
+  /* les clés restent en français (stables d'une langue à l'autre) ; seuls les textes affichés sont traduits */
+  const champ=b.champagne, g=T(champ?'flute':'glass',c.glasses), label=`${T('bottleWord')} ${W(b.name)}`;
   if(champ) return {key:`bouteille:${b.name}:${c.glasses}`, label, sub:g, price:b.price};
   if(c.mode==='jus'){
     const j=JUS.find(m=>m.id===c.jus);
-    return {key:`bouteille:${b.name}:${c.glasses}:jus-${j.id}`, label, sub:`${g} · 1 bouteille de ${j.name.toLowerCase()}`, price:b.price};
+    return {key:`bouteille:${b.name}:${c.glasses}:jus-${j.id}`, label, sub:`${g} · ${T('juiceBottle',W(j.name).toLowerCase())}`, price:b.price};
   }
-  const softs=MIXERS.filter(m=>c.softs[m.id]).map(m=>`${c.softs[m.id]} ${m.name}`);
+  const picked=MIXERS.filter(m=>c.softs[m.id]);
+  const softs=picked.map(m=>`${c.softs[m.id]} ${W(m.name)}`);
   const n=countSofts(c.softs), extra=extraSofts(n,BOTTLE_SOFTS);
-  return {key:`bouteille:${b.name}:${c.glasses}:${softs.join('|')}`, label,
-    sub:`${g} · ${softs.length?softs.join(', '):'sans soft'}${extra?` (dont ${extra} en plus)`:''}`,
+  return {key:`bouteille:${b.name}:${c.glasses}:${picked.map(m=>`${c.softs[m.id]} ${m.name}`).join('|')}`, label,
+    sub:`${g} · ${softs.length?softs.join(', '):T('noMixer')}${extra?T('extraSub',extra):''}`,
     price:bottlePrice(b.price,{mode:'softs',softCount:n},BOTTLE_SOFTS,SOFT_SUPPLEMENT)};
 }
 
 function pickSpirit(s){
-  if(s.noSoft){ add({key:`verre:${s.id}`,label:s.short||s.name,sub:'',price:s.price}); return; }
+  if(s.noSoft){ add({key:`verre:${s.id}`,label:W(s.short||s.name),sub:'',price:s.price}); return; }
   go('mixer',s);
 }
 
 function showCustomer(){
   const el=document.getElementById('show');
   el.innerHTML = state.order.map(i=>`<div class="ln"><span>${i.qty} × ${esc(i.label)}${i.sub?' '+esc(i.sub):''}</span><b class="price-num">${eur(i.qty*i.price)}</b></div>`).join('')
-    + `<div class="tot"><span>TOTAL</span><b class="price-num">${eur(total())}</b></div><p>Touche l’écran pour revenir</p>`;
+    + `<div class="tot"><span>${T('total')}</span><b class="price-num">${eur(total())}</b></div><p>${T('tapBack')}</p>`;
   el.hidden=false;
 }
 document.getElementById('show').addEventListener('click',e=>e.currentTarget.hidden=true);
@@ -298,7 +307,7 @@ function render(scroll){
   const n=count(), bar=document.getElementById('bar');
   const summary = state.order.map(i=>`${i.qty} ${esc(i.label)}`).join(', ');
   bar.className = n ? '' : 'off';
-  bar.innerHTML = `<span class="n">${n}</span><span class="lbl">${n?summary:'Commande vide'}</span><span class="tt price-num">${eur(total())}</span>`;
+  bar.innerHTML = `<span class="n">${n}</span><span class="lbl">${n?summary:T('emptyOrder')}</span><span class="tt price-num">${eur(total())}</span>`;
   bar.hidden = top.v==='order'||top.v==='cash';
   document.querySelector('.bar').hidden = top.v==='order'||top.v==='cash';
   if(scroll) window.scrollTo(0,0);
@@ -320,9 +329,25 @@ document.getElementById('reset').onclick=home;
 document.getElementById('bar').onclick=()=>go('order');
 
 /* ============ PRÉFÉRENCES (mode gaucher) ============ */
-const prefs = { lefty:false, ...(read(KEYS.prefs, {}) || {}) };
-function applyPrefs(){ document.body.classList.toggle('lefty', !!prefs.lefty); }
+const prefs = { lefty:false, lang:DEFAULT_LANG, ...(read(KEYS.prefs, {}) || {}) };
+function applyPrefs(){
+  document.body.classList.toggle('lefty', !!prefs.lefty);
+  document.documentElement.lang = HTML_LANG[lang()];
+}
 applyPrefs();
+
+/** Langue de l'écran client, choisie sur l'accueil (mémorisée sur le téléphone). */
+function setLang(l){
+  if(!isLang(l)) return;
+  prefs.lang = l; write(KEYS.prefs, prefs);
+  applyPrefs(); render(false);
+}
+const LANG_SHORT = {fr:'Français', pt:'Português', en:'English'};
+const FLAG = {
+  fr:`<svg viewBox="0 0 3 2" aria-hidden="true"><rect width="1" height="2" fill="#0055A4"/><rect x="1" width="1" height="2" fill="#fff"/><rect x="2" width="1" height="2" fill="#EF4135"/></svg>`,
+  pt:`<svg viewBox="0 0 20 14" aria-hidden="true"><rect width="20" height="14" fill="#009C3B"/><polygon points="10,1.4 18.3,7 10,12.6 1.7,7" fill="#FFDF00"/><circle cx="10" cy="7" r="3.5" fill="#002776"/><path d="M6.7 6.2c2.4-.6 4.9-.2 6.7 1.1" stroke="#fff" stroke-width=".5" fill="none"/></svg>`,
+  en:`<svg viewBox="0 0 60 30" aria-hidden="true"><clipPath id="ukclip"><path d="M30,15h30v15zv15h-30zh-30v-15zv-15h30z"/></clipPath><rect width="60" height="30" fill="#012169"/><path d="M0,0L60,30M60,0L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0L60,30M60,0L0,30" clip-path="url(#ukclip)" stroke="#C8102E" stroke-width="4"/><path d="M30,0v30M0,15h60" stroke="#fff" stroke-width="10"/><path d="M30,0v30M0,15h60" stroke="#C8102E" stroke-width="6"/></svg>`,
+};
 
 /* ============ RÉGLAGES (protégés par un code) ============ */
 const sheet = document.getElementById('sheet');

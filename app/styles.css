@@ -57,6 +57,14 @@ h1{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.1;mar
 .hint{color:var(--muted);margin:0 0 16px;font-size:15px}
 .price-num{font-variant-numeric:tabular-nums}
 
+/* Choix de la langue (accueil) : 3 drapeaux */
+.langs{display:flex;gap:10px;margin:0 0 14px}
+.lang{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;border-radius:16px;
+  background:var(--panel);border:2px solid var(--line);color:var(--muted);font-size:13px;font-weight:600}
+.lang svg{width:56px;height:38px;border-radius:6px;box-shadow:0 0 0 1px #fff3}
+.lang[aria-pressed="true"]{border-color:var(--flame);color:var(--ink);background:var(--panel-2)}
+.lang:active{transform:scale(.97)}
+
 /* Accueil : 4 grandes familles */
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .cat{--c:var(--beer);position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:10px;
