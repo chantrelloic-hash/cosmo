@@ -28,14 +28,18 @@ on confirme en lui montrant le total en très gros. Zéro texte à lire de près
 
 ```
 Accueil : Bière · Soft · Alcool au verre · Bouteille
- ├─ Bière   → Heineken 5 € · Desperados 7 € · Guinness 7 € · Corona 7 €   (tap = +1)
- ├─ Soft    → Soda 5 € · Jus 5 € · Énergisant 5 € · Eau 3 €
+ ├─ Bière   → Heineken 5 € · Desperados Original 7 € · Desperados Rouge 7 € · Guinness 7 € · Corona 7 €   (tap = +1)
+ ├─ Soft    → Coca-Cola · Schweppes · Perrier · Jus d'orange · Jus de pomme · Jus d'ananas · Red Bull (5 €) · Eau 50 cl (3 €)
  ├─ Alcool  → Vodka · Rhum · Whisky ▸ · Tequila · Gin · Hennessy · Get ▸ · Jäger · Baileys · Coupe champagne
  │             Whisky ▸ Red Label 10 · J&B 10 · William 10 · Jack Daniel's 12 · Black Label 15
  │             Get ▸ Get 27 · Get 31
- │             puis « Avec un soft ? »  →  Non, sec (prix alcool)  |  Oui (+5 €) → Coca, Sprite, Jus, Énergisant…
+ │             puis « Avec un soft ? »  →  Non, sec (prix alcool)  |  Oui (+5 €) → un des 7 softs (tous sauf l'eau)
  │             (la coupe de champagne n'a pas la question du soft)
  └─ Bouteille → 140 € · 120 € · 90 €, rangées par prix
+               puis « Combien de verres ? » (1 à 10, 4 par défaut)
+               puis « Quels softs ? » : chaque tap sur un soft ajoute 1 (ex. 2 Coca-Cola + 1 Red Bull)
+               (Champagne Moët : on demande le nombre de flûtes, pas de softs)
+               Ligne de commande : « Bouteille Vodka · 6 verres · 2 Coca-Cola, 1 Red Bull · 90 € »
 Barre du bas (toujours visible) : nb d'articles + total → Commande
 Commande : +/− par ligne, total, « Montrer au client » (plein écran noir, total géant), « Encaisser »
 Encaisser : on tape les billets reçus (5/10/20/50/100) → « À rendre » en gros → nouvelle commande
@@ -57,10 +61,13 @@ Une commande d'exemple (2 Heineken + 1 Vodka-Énergisant) est préchargée pour 
 
 ## Questions ouvertes (à valider par Loïc)
 
-1. **Softs servis avec l'alcool** : quelle liste exacte ? (maquette : Coca, Sprite, Jus d'orange, Jus d'ananas, Énergisant, Tonic)
-2. **Softs seuls** : quelles marques de soda, de jus et d'énergisant (Red Bull ? Monster ?)
+Réglé : liste des softs (Perrier, Coca-Cola, Red Bull, Schweppes, jus orange/pomme/ananas), Desperados Original et Rouge,
+bouteille = nombre de verres + softs.
+
+1. **Softs avec une bouteille** : inclus dans le prix, ou facturés en plus ? (la maquette les considère inclus)
+2. **Prix des Desperados Rouge** : 7 € comme l'Original ? (supposé dans la maquette)
 3. **« William »** : William Peel ou William Lawson's ?
-4. **Bouteilles** : des softs sont-ils inclus avec une bouteille ? Prix des softs en plus ?
+4. **Schweppes** : un seul parfum (tonic ? agrumes ?) ou plusieurs ?
 5. **Photos** : prendre en photo les bouteilles derrière le bar pour remplacer les pastilles de couleur (meilleure reconnaissance).
 6. **Paiement** : uniquement espèces, ou carte aussi ? (garder ou non l'écran de rendu monnaie)
 7. **Un seul téléphone** ou plusieurs serveurs ? (si plusieurs : historique / total de la soirée par serveur ?)
