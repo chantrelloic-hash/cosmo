@@ -267,6 +267,7 @@ const SPIRITS = [
   ]},
   {id:'jager',   name:'Jäger&shy;meister', short:'Jägermeister', price:10, liquid:'#5A3A12'},
   {id:'baileys', name:'Baileys',  price:10, liquid:'#E8D2B0'},
+  {id:'caipi',   name:'Caïpi maracuja', price:10, liquid:'#F2A900', noSoft:true, note:'Cocktail maison'},
   {id:'champ',   name:'Coupe de champagne', short:'Coupe champagne', price:20, liquid:'#F2D27A', glass:'flute', noSoft:true},
 ];
 const BOTTLES = [
@@ -342,7 +343,7 @@ const V = {
         const min=Math.min(...prices), max=Math.max(...prices);
         const n = s.children ? s.children.reduce((t,c)=>t+qtyPrefix('verre:'+c.id),0) : qtyPrefix('verre:'+s.id);
         const wide = s.id==='champ' ? ' wide' : '';
-        const p2 = s.noSoft ? 'Servie seule' : s.children ? `${s.children.length} choix` : `avec soft <b>${eur(s.price+SOFT_SUPPLEMENT)}</b>`;
+        const p2 = s.noSoft ? (s.note||'Servie seule') : s.children ? `${s.children.length} choix` : `avec soft <b>${eur(s.price+SOFT_SUPPLEMENT)}</b>`;
         return `<button class="spirit${wide}" ${on(()=> s.children ? go('spiritSub',s) : pickSpirit(s))}>
           ${n?`<span class="qty">${n}</span>`:''}
           ${glassIcon(s.liquid,s.glass)}

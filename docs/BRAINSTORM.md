@@ -30,11 +30,11 @@ on confirme en lui montrant le total en très gros. Zéro texte à lire de près
 Accueil : Bière · Soft · Alcool au verre · Bouteille
  ├─ Bière   → Heineken 5 € · Desperados Original 7 € · Desperados Rouge 7 € · Guinness 7 € · Corona 7 €   (tap = +1)
  ├─ Soft    → Coca-Cola · Schweppes Tonic · Perrier · Jus d'orange · Jus de pomme · Jus d'ananas · Red Bull (5 €) · Eau 50 cl (3 €)
- ├─ Alcool  → Vodka · Rhum · Whisky ▸ · Tequila · Gin · Hennessy · Get ▸ · Jäger · Baileys · Coupe champagne
+ ├─ Alcool  → Vodka · Rhum · Whisky ▸ · Tequila · Gin · Hennessy · Get ▸ · Jäger · Baileys · Caïpi maracuja · Coupe champagne
  │             Whisky ▸ Red Label 10 · J&B 10 · Jack Daniel's 12 · Black Label 15
  │             Get ▸ Get 27 · Get 31
  │             puis « Avec un soft ? »  →  Non, sec (prix alcool)  |  Oui (+5 €) → un des 7 softs (tous sauf l'eau)
- │             (la coupe de champagne n'a pas la question du soft)
+ │             (la caïpi maracuja 10 € et la coupe de champagne n'ont pas la question du soft)
  └─ Bouteille → 140 € · 120 € · 90 €, rangées par prix
                puis « Combien de verres ? » (1 à 10, 4 par défaut)
                puis « Inclus avec la bouteille » : 5 softs au choix  OU  1 bouteille de jus
@@ -55,6 +55,7 @@ Encaisser : on tape les billets reçus (5/10/20/50/100) → « À rendre » en g
 | Autres alcools (vodka, rhum, tequila, gin, Get, Jäger, Baileys, Red Label, J&B) | 10 € | 15 € |
 | Jack Daniel's | 12 € | 17 € |
 | Hennessy, Black Label | 15 € | 20 € |
+| Caïpi maracuja (cocktail maison) | 10 € | sans objet |
 | Coupe de champagne | 20 € | sans objet |
 
 ## Ce que fait la maquette (`maquette/index.html`)
