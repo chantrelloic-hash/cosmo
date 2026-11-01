@@ -402,7 +402,7 @@ function rowHTML(r){
   const o = OV[r.key]||{}, out = o.available===false, price = o.price ?? r.base, mod = price!==r.base;
   return `<div class="prow${out?' out':''}${mod||out?' mod':''}" data-key="${esc(r.key)}">
     <div class="pn"><b>${esc(r.name)}</b>${r.sub?`<small>${esc(r.sub)}</small>`:''}${mod?`<small class="orig">carte : ${r.base} €</small>`:''}${out?'<small class="orig">Rupture</small>':''}</div>
-    <button class="sw" role="switch" aria-checked="${!out}" data-s="toggle"><i></i><span>Disponible</span></button>
+    <button class="sw" role="switch" aria-checked="${!out}" data-s="toggle"><i></i><span data-on="Disponible" data-off="Rupture"></span></button>
     <label class="pp"><input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" enterkeyhint="done" value="${price}" data-s="price" aria-label="Prix de ${esc(r.name)} en euros"><span>€</span></label>
   </div>`;
 }
@@ -418,7 +418,7 @@ function settingsHTML(){
     ${storageFailed?`<p class="notice warn" role="alert">Stockage indisponible sur ce téléphone : les modifications seront perdues à la fermeture de l’appli.</p>`:''}
     <div class="sect">Affichage</div>
     <div class="prow"><div class="pn"><b>Mode gaucher</b><small>Barre de commande et en-tête inversés</small></div>
-      <button class="sw" role="switch" aria-checked="${!!prefs.lefty}" data-s="lefty"><i></i><span>Activé</span></button></div>
+      <button class="sw" role="switch" aria-checked="${!!prefs.lefty}" data-s="lefty"><i></i><span data-on="Activé" data-off="Désactivé"></span></button></div>
     <div class="sect">Softs</div>
     ${numRow('Supplément soft','softSupplement',SOFT_SUPPLEMENT,`en € · carte : ${st.softSupplement} €`)}
     ${numRow('Softs inclus avec une bouteille','bottleIncludedSofts',BOTTLE_SOFTS,`nombre · carte : ${st.bottleIncludedSofts}`)}

@@ -269,3 +269,7 @@ h1{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.1;mar
 
 @media (prefers-reduced-motion:reduce){.dots.shake{animation:none}*{transition:none!important}.cat:active,.brand:active,.spirit:active,.chip:active,.bigbtn:active{transform:none}}
 @media (min-width:480px){.cat,.brand{min-height:210px}.chips{grid-template-columns:repeat(3,1fr)}}
+
+/* Libellé des interrupteurs : suit l'état (aria-checked) */
+.sw span[data-on]::before{content:attr(data-off)}
+.sw[aria-checked="true"] span[data-on]::before{content:attr(data-on)}
