@@ -37,8 +37,10 @@ Accueil : Bière · Soft · Alcool au verre · Bouteille
  │             (la coupe de champagne n'a pas la question du soft)
  └─ Bouteille → 140 € · 120 € · 90 €, rangées par prix
                puis « Combien de verres ? » (1 à 10, 4 par défaut)
-               puis « Quels softs ? » : chaque tap sur un soft ajoute 1 (ex. 2 Coca-Cola + 1 Red Bull)
-               5 softs inclus ; à partir du 6e, +5 € par soft (compteur « 3/5 » qui passe en orange au-delà)
+               puis « Inclus avec la bouteille » : 5 softs au choix  OU  1 bouteille de jus
+                 - 5 softs : chaque tap sur un soft ajoute 1 (ex. 2 Coca-Cola + 1 Red Bull) ;
+                   à partir du 6e, +5 € par soft (compteur « 3/5 » qui passe en orange au-delà)
+                 - 1 bouteille de jus : orange, pomme ou ananas (bouton « Ajouter » bloqué tant que le jus n'est pas choisi)
                (Champagne Moët : on demande le nombre de flûtes, pas de softs)
                Ligne de commande : « Bouteille Vodka · 6 verres · 2 Coca-Cola, 1 Red Bull · 90 € »
 Barre du bas (toujours visible) : nb d'articles + total → Commande
@@ -63,7 +65,7 @@ Une commande d'exemple (2 Heineken + 1 Vodka-Énergisant) est préchargée pour 
 ## Questions ouvertes (à valider par Loïc)
 
 Réglé : liste des softs (Perrier, Coca-Cola, Red Bull, Schweppes, jus orange/pomme/ananas), Desperados Original et Rouge,
-bouteille = nombre de verres + softs, 5 softs inclus avec une bouteille, Desperados Rouge à 7 €.
+bouteille = nombre de verres + (5 softs ou 1 bouteille de jus) inclus, Desperados Rouge à 7 €.
 
 1. **Softs au-delà de 5 avec une bouteille** : 5 € chacun comme un soft seul ? (supposé dans la maquette)
 2. **« William »** : William Peel ou William Lawson's ?

@@ -126,6 +126,13 @@ h1{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.1;mar
 .chip.full{grid-column:1 / -1;min-height:76px;flex-direction:row;gap:12px;font-size:17px}
 .chip .qty{top:6px;right:6px;height:30px;min-width:30px;font-size:14px}
 .brand.wide{min-height:120px}
+.segs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:76px;border-radius:16px;background:var(--panel);border:2px solid var(--line)}
+.seg b{font-family:var(--display);font-weight:900;font-size:20px}
+.seg small{font-size:14px;color:var(--muted);font-weight:700}
+.seg[aria-pressed="true"]{background:var(--bottle);border-color:var(--bottle);color:#1a1405}
+.seg[aria-pressed="true"] small{color:#1a1405}
+.cta[disabled]{opacity:.45;cursor:not-allowed}
 .brand.wide .pill{align-self:center;margin-left:auto;margin-right:40px}
 .nums{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 .num{min-height:60px;border-radius:14px;background:var(--panel);border:2px solid var(--line);font-family:var(--display);font-weight:900;font-size:22px}
@@ -219,7 +226,7 @@ h1{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.1;mar
 <script>
 /* ============ CARTE (sera extraite dans menu.json) ============ */
 const SOFT_SUPPLEMENT = 5;
-const BOTTLE_SOFTS = 5; /* softs inclus avec une bouteille ; au-delà, +SOFT_SUPPLEMENT par soft */
+const BOTTLE_SOFTS = 5; /* avec une bouteille : 5 softs OU 1 bouteille de jus ; au-delà de 5 softs, +SOFT_SUPPLEMENT par soft */
 
 const BEERS = [
   {id:'heineken',  name:'Heineken',  size:'25 cl', price:5, bg:'#0A6B35', fg:'#FFFFFF', logo:'star', wide:true},
@@ -240,6 +247,8 @@ const SOFTS = [
 ];
 /* Softs proposés avec un alcool ou une bouteille : tous sauf l'eau */
 const MIXERS = SOFTS.filter(m=>m.id!=='eau');
+/* Jus disponibles en bouteille, au choix à la place des 5 softs */
+const JUS = SOFTS.filter(m=>['orange','pomme','ananas'].includes(m.id));
 const SPIRITS = [
   {id:'vodka',   name:'Vodka',    price:10, liquid:'#DCEBFF'},
   {id:'rhum',    name:'Rhum',     price:10, liquid:'#D07A2D'},
@@ -369,19 +378,31 @@ const V = {
       ${BOTTLES.map(t=>`<div class="tier"><b class="price-num">${eur(t.price)}</b><span>la bouteille</span></div>
         <div class="grid">${t.items.map(name=>{
           const key='bouteille:'+name, n=qtyPrefix(key+':');
-          return `<button class="bottle" ${on(()=>{state.bcfg={glasses:4,softs:{}}; go('bottleSetup',{name,price:t.price});})}>${n?`<span class="qty">${n}</span>`:''}${ICON.bottle}<span>${name}</span></button>`;}).join('')}</div>`).join('')}`;
+          return `<button class="bottle" ${on(()=>{state.bcfg={glasses:4,softs:{},mode:'softs',jus:null}; go('bottleSetup',{name,price:t.price});})}>${n?`<span class="qty">${n}</span>`:''}${ICON.bottle}<span>${name}</span></button>`;}).join('')}</div>`).join('')}`;
   },
   bottleSetup(b){
-    const c=state.bcfg, champ=isChamp(b.name);
+    const c=state.bcfg, champ=isChamp(b.name), jus=c.mode==='jus';
     const nSoft=Object.values(c.softs).reduce((a,n)=>a+n,0);
-    const extra=champ?0:Math.max(0,nSoft-BOTTLE_SOFTS), price=b.price+extra*SOFT_SUPPLEMENT;
-    return `<h1>${b.name}</h1><p class="hint">Bouteille · <b class="price-num" style="color:var(--bottle)">${eur(b.price)}</b>${champ?'':` · ${BOTTLE_SOFTS} softs inclus`}</p>
+    const extra=(champ||jus)?0:Math.max(0,nSoft-BOTTLE_SOFTS), price=b.price+extra*SOFT_SUPPLEMENT;
+    const ready=champ||!jus||!!c.jus;
+    const seg=(mode,t,st)=>`<button class="seg" aria-pressed="${c.mode===mode}" ${on(()=>{c.mode=mode; render(false);})}><b>${t}</b><small>${st}</small></button>`;
+    const chip=(m,n,act,full)=>`<button class="chip${full?' full':''}" style="--bg:${m.bg};--fg:${m.fg};color:${m.fg}" ${on(act)}>${n?`<span class="qty">${n}</span>`:''}${ICON[m.logo]}${m.name}</button>`;
+    let inclus='';
+    if(!champ){
+      inclus = `<div class="sect">Inclus avec la bouteille</div>
+      <div class="segs">${seg('softs',`${BOTTLE_SOFTS} softs`,'au choix')}${seg('jus','1 bouteille','de jus')}</div>`;
+      inclus += jus
+        ? `<div class="sect">Quel jus&nbsp;?</div>
+      <div class="chips">${JUS.map(m=>chip(m, c.jus===m.id?'✓':0, ()=>{c.jus=m.id; render(false);})).join('')}</div>`
+        : `<div class="sect"><span>Softs <span class="price-num" style="color:${extra?'var(--flame)':'var(--soft)'}">${nSoft}/${BOTTLE_SOFTS}</span></span>${nSoft?`<button ${on(()=>{c.softs={}; render(false);})}>Effacer</button>`:''}</div>
+      <p class="hint">Touche plusieurs fois pour en mettre plusieurs. Au-delà de ${BOTTLE_SOFTS} : +${SOFT_SUPPLEMENT}&nbsp;€ par soft.${extra?` <b style="color:var(--flame)">${extra} en plus : +${eur(extra*SOFT_SUPPLEMENT)}</b>`:''}</p>
+      <div class="chips">${MIXERS.map(m=>{const n=c.softs[m.id]||0; return chip(m,n,()=>{c.softs[m.id]=n+1; render(false);}, m.id==='redbull');}).join('')}</div>`;
+    }
+    return `<h1>${b.name}</h1><p class="hint">Bouteille · <b class="price-num" style="color:var(--bottle)">${eur(b.price)}</b>${champ?'':` · ${BOTTLE_SOFTS} softs ou 1 bouteille de jus inclus`}</p>
       <div class="sect">Combien de ${champ?'flûtes':'verres'}&nbsp;?</div>
       <div class="nums">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button class="num price-num" aria-pressed="${c.glasses===n}" ${on(()=>{c.glasses=n; render(false);})}>${n}</button>`).join('')}</div>
-      ${champ?'':`<div class="sect"><span>Softs <span class="price-num" style="color:${extra?'var(--flame)':'var(--soft)'}">${nSoft}/${BOTTLE_SOFTS}</span></span>${nSoft?`<button ${on(()=>{c.softs={}; render(false);})}>Effacer</button>`:''}</div>
-      <p class="hint">${BOTTLE_SOFTS} softs inclus, touche plusieurs fois pour en mettre plusieurs. Au-delà : +${SOFT_SUPPLEMENT}&nbsp;€ par soft.${extra?` <b style="color:var(--flame)">${extra} en plus : +${eur(extra*SOFT_SUPPLEMENT)}</b>`:''}</p>
-      <div class="chips">${MIXERS.map(m=>{const n=c.softs[m.id]||0; return `<button class="chip${m.id==='redbull'?' full':''}" style="--bg:${m.bg};--fg:${m.fg};color:${m.fg}" ${on(()=>{c.softs[m.id]=n+1; render(false);})}>${n?`<span class="qty">${n}</span>`:''}${ICON[m.logo]}${m.name}</button>`;}).join('')}</div>`}
-      <div class="actions" style="margin-top:20px"><button class="cta" ${on(()=>{add(bottleItem(b,c)); state.stack.pop(); render(true);})}>Ajouter la bouteille · ${eur(price)}</button></div>`;
+      ${inclus}
+      <div class="actions" style="margin-top:20px"><button class="cta" ${ready?'':'disabled'} ${on(()=>{ if(!ready) return; add(bottleItem(b,c)); state.stack.pop(); render(true);})}>${ready?`Ajouter la bouteille · ${eur(price)}`:'Choisis le jus'}</button></div>`;
   },
   order(){
     if(!state.order.length) return `<h1>Commande</h1><div class="empty">Rien pour l’instant.<br><br><button class="cta ghost" ${on(home)}>Choisir une boisson</button></div>`;
@@ -425,11 +446,16 @@ function brandCard(b,kind){
 
 const isChamp = name => /Champagne/.test(name);
 function bottleItem(b,c){
-  const champ=isChamp(b.name);
+  const champ=isChamp(b.name), g=`${c.glasses} ${champ?'flûte':'verre'}${c.glasses>1?'s':''}`, label=`Bouteille ${b.name}`;
+  if(champ) return {key:`bouteille:${b.name}:${c.glasses}`, label, sub:g, price:b.price};
+  if(c.mode==='jus'){
+    const j=JUS.find(m=>m.id===c.jus);
+    return {key:`bouteille:${b.name}:${c.glasses}:jus-${j.id}`, label, sub:`${g} · 1 bouteille de ${j.name.toLowerCase()}`, price:b.price};
+  }
   const softs=MIXERS.filter(m=>c.softs[m.id]).map(m=>`${c.softs[m.id]} ${m.name}`);
-  const sub=`${c.glasses} ${champ?'flûte':'verre'}${c.glasses>1?'s':''}` + (softs.length ? ' · '+softs.join(', ') : (champ?'':' · sans soft'));
-  const n=Object.values(c.softs).reduce((a,x)=>a+x,0), extra=champ?0:Math.max(0,n-BOTTLE_SOFTS);
-  return {key:`bouteille:${b.name}:${c.glasses}:${softs.join('|')}`, label:`Bouteille ${b.name}`, sub: sub+(extra?` (dont ${extra} en plus)`:''), price:b.price+extra*SOFT_SUPPLEMENT};
+  const n=Object.values(c.softs).reduce((a,x)=>a+x,0), extra=Math.max(0,n-BOTTLE_SOFTS);
+  return {key:`bouteille:${b.name}:${c.glasses}:${softs.join('|')}`, label,
+    sub:`${g} · ${softs.length?softs.join(', '):'sans soft'}${extra?` (dont ${extra} en plus)`:''}`, price:b.price+extra*SOFT_SUPPLEMENT};
 }
 
 function pickSpirit(s){
