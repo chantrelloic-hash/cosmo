@@ -14,10 +14,10 @@ Installation : iPhone, Safari → Partager → « Sur l'écran d'accueil » ; An
 
 - `app/` : l'appli, servie telle quelle (PWA, JS vanilla en modules ES, **aucun framework, aucune étape de build**).
   - `index.html`, `styles.css`, `app.js` (écrans et interactions), `store.js` (localStorage), `pricing.js` (**calculs purs, sans DOM**).
-  - `menu.json` : la carte (produits, prix, couleurs, image optionnelle, disponibilité). Doc : `app/MENU.md`.
+  - `menu.json` : la carte (produits, prix, couleurs, image optionnelle, disponibilité, `favorites` = « Les plus vendus » de l'accueil). Doc : `app/MENU.md`.
   - `sw.js` : service worker (hors ligne). **Incrémenter `CACHE_VERSION` à chaque modification de l'appli** sinon les téléphones gardent l'ancienne version.
     `menu.json` est servi réseau d'abord (délai 2 s) avec repli sur le cache.
-  - `manifest.webmanifest`, `icons/` (générées par `tools/make_icons.py`), `images/` (photos produits, voir `app/images/README.md`).
+  - `manifest.webmanifest`, `icons/` (générées par `tools/make_icons.py`), `images/` (photos produits WebP < 40 Ko, voir `app/images/README.md` ; **crédits obligatoires dans `app/images/CREDITS.md`**, Open Food Facts CC-BY-SA 3.0 + photos du Cosmo ; générées par `tools/fetch_product_images.py`).
 - `maquette/index.html` : maquette cliquable validée par Loïc (référence visuelle, ne pas modifier).
 - `docs/BRAINSTORM.md` : besoin, parcours, règles de prix, plan en lots (tous faits), questions encore ouvertes.
 - `tests/unit/` (node:test) : `pricing.test.js`, `menu.test.js` (vérifie la carte officielle). `tests/e2e/` (Playwright) : parcours, commande, réglages, hors ligne, mise en page.
@@ -28,7 +28,7 @@ Installation : iPhone, Safari → Partager → « Sur l'écran d'accueil » ; An
 ```
 npm install
 npm run serve      # http://localhost:8080 (python3 -m http.server sur app/)
-npm test           # unitaires (71) + e2e Playwright (10), doit rester vert
+npm test           # unitaires (96) + e2e Playwright (24), doit rester vert
 ```
 
 En local, `playwright.config.js` utilise `/opt/pw-browsers/chromium` s'il existe (environnement cloud) ; sinon `npx playwright install chromium`.
@@ -44,6 +44,13 @@ En local, `playwright.config.js` utilise `/opt/pw-browsers/chromium` s'il existe
   On choisit le nombre de verres (1 à 10) puis **5 softs inclus OU 1 bouteille de jus** (orange, pomme, ananas). Au-delà de 5 softs : +5 € par soft.
   Champagne Moët : nombre de flûtes, pas de softs.
 - « William » ne fait pas partie de la carte (c'était une erreur).
+
+## Accueil : les plus vendus et la commande en cours
+
+- L'accueil montre d'abord « Les plus vendus » (`favorites` dans `menu.json` : Heineken, Desperados, Desperados Rouge en 1 tap ; Rhum et Vodka : « avec quoi ? » puis quantité 1 à 6), puis « Toute la carte » (les 4 familles), puis la section **« Commande en cours »** (lignes avec − / +, total énorme, « Montrer au client », « Encaisser », « Vider »).
+- Sur l'accueil la barre du bas est une petite barre (articles + total) qui défile vers « Commande en cours » et se masque quand cette section est visible ; sur les autres écrans, la barre détaillée ouvre l'écran Commande.
+- Marques servies au bar (photos du client) : vodka Eristoff, gin Bombay London Dry, tequila Camino Real, rhum Saint James Royal Blanc (d'autres rhums au bar, mais pas de choix de marque dans l'appli), Hennessy VS, Get 27 / 31, Baileys, Jägermeister. Ne pas ajouter de produit hors carte officielle (Malibu, Martini, Campari, Ricard...).
+- Le service worker précache toutes les images référencées par `menu.json`.
 
 ## Conventions
 

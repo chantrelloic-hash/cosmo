@@ -94,3 +94,10 @@ hors ligne via service worker, hébergée gratuitement (GitHub Pages). Pas de se
    tests Playwright du parcours complet, des réglages, du hors ligne et de la mise en page mobile (`tests/e2e/`, viewport 390x844),
    CI GitHub Actions (`.github/workflows/ci.yml`) et déploiement GitHub Pages depuis `app/` (`.github/workflows/pages.yml`).
    *Reste à faire par Loïc* : activer Settings → Pages → Source « GitHub Actions » (voir `README.md`).
+
+## Lot 8 : les plus vendus, commande en bas de l'accueil, photos (demande de Loïc)
+
+- Accueil : section « Les plus vendus » configurable (`favorites` dans `menu.json`) ; bières en 1 tap, Rhum / Vodka via « avec quoi ? » puis quantité 1 à 6 (annuler retire tout d'un coup).
+- « Commande en cours » en bas de l'accueil (liste, − / +, total, client, encaisser, vider) ; petite barre collée qui y mène.
+- Photos réelles (Open Food Facts CC-BY-SA + photos du bar), crédits dans `app/images/CREDITS.md`. Sans photo : Schweppes, Perrier, jus, eau, Red/Black Label, J&B, Moët (à photographier).
+- Question ouverte : « Vider » sur l'accueil n'a pas de confirmation (comme sur l'écran Commande) ; faut-il en ajouter une ?

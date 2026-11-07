@@ -1,6 +1,13 @@
 {
   "softSupplement": 5,
   "bottleIncludedSofts": 5,
+  "favorites": [
+    { "beer": "heineken" },
+    { "beer": "desperados" },
+    { "beer": "desperados-rouge" },
+    { "spirit": "rhum", "mixers": ["coca"] },
+    { "spirit": "vodka", "mixers": ["redbull", "pomme"] }
+  ],
   "beers": [
     {
       "id": "heineken",
@@ -11,7 +18,7 @@
       "fg": "#FFFFFF",
       "logo": "star",
       "wide": true,
-      "image": null,
+      "image": "images/heineken.webp",
       "available": true
     },
     {
@@ -23,7 +30,7 @@
       "bg": "#111111",
       "fg": "#F4C430",
       "logo": "d",
-      "image": null,
+      "image": "images/desperados.webp",
       "available": true
     },
     {
@@ -35,7 +42,7 @@
       "bg": "#B3121B",
       "fg": "#FFFFFF",
       "logo": "dred",
-      "image": null,
+      "image": "images/desperados-rouge.webp",
       "available": true
     },
     {
@@ -46,7 +53,7 @@
       "bg": "#0B0806",
       "fg": "#E9D9A8",
       "logo": "foam",
-      "image": null,
+      "image": "images/guinness.webp",
       "available": true
     },
     {
@@ -57,7 +64,7 @@
       "bg": "#F6EFD6",
       "fg": "#123C8C",
       "logo": "crown",
-      "image": null,
+      "image": "images/corona.webp",
       "available": true
     }
   ],
@@ -71,7 +78,7 @@
       "fg": "#FFFFFF",
       "logo": "bubbles",
       "mixer": true,
-      "image": null,
+      "image": "images/coca.webp",
       "available": true
     },
     {
@@ -143,7 +150,7 @@
       "fg": "#FFFFFF",
       "logo": "bolt",
       "mixer": true,
-      "image": null,
+      "image": "images/redbull.webp",
       "available": true
     },
     {
@@ -170,7 +177,7 @@
       "name": "Vodka",
       "price": 10,
       "liquid": "#DCEBFF",
-      "image": null,
+      "image": "images/vodka.webp",
       "available": true
     },
     {
@@ -178,7 +185,7 @@
       "name": "Rhum",
       "price": 10,
       "liquid": "#D07A2D",
-      "image": null,
+      "image": "images/rhum.webp",
       "available": true
     },
     {
@@ -204,7 +211,7 @@
           "id": "jack",
           "name": "Jack Daniel’s",
           "price": 12,
-          "image": null,
+          "image": "images/jack.webp",
           "available": true
         },
         {
@@ -223,7 +230,7 @@
       "name": "Tequila",
       "price": 10,
       "liquid": "#E8D36A",
-      "image": null,
+      "image": "images/tequila.webp",
       "available": true
     },
     {
@@ -231,7 +238,7 @@
       "name": "Gin",
       "price": 10,
       "liquid": "#A6E3D4",
-      "image": null,
+      "image": "images/gin.webp",
       "available": true
     },
     {
@@ -240,7 +247,7 @@
       "short": "Hennessy",
       "price": 15,
       "liquid": "#9A4416",
-      "image": null,
+      "image": "images/cognac.webp",
       "available": true
     },
     {
@@ -253,7 +260,7 @@
           "name": "Get 27",
           "price": 10,
           "liquid": "#3CCB7F",
-          "image": null,
+          "image": "images/get27.webp",
           "available": true
         },
         {
@@ -261,7 +268,7 @@
           "name": "Get 31",
           "price": 10,
           "liquid": "#F2F2F2",
-          "image": null,
+          "image": "images/get31.webp",
           "available": true
         }
       ],
@@ -274,7 +281,7 @@
       "short": "Jägermeister",
       "price": 10,
       "liquid": "#5A3A12",
-      "image": null,
+      "image": "images/jager.webp",
       "available": true
     },
     {
@@ -282,7 +289,7 @@
       "name": "Baileys",
       "price": 10,
       "liquid": "#E8D2B0",
-      "image": null,
+      "image": "images/baileys.webp",
       "available": true
     },
     {
@@ -315,7 +322,7 @@
         {
           "id": "hennessy",
           "name": "Cognac Hennessy",
-          "image": null,
+          "image": "images/cognac.webp",
           "available": true
         },
         {
@@ -339,7 +346,7 @@
         {
           "id": "jack-daniels",
           "name": "Jack Daniel’s",
-          "image": null,
+          "image": "images/jack.webp",
           "available": true
         }
       ]
@@ -350,49 +357,49 @@
         {
           "id": "vodka",
           "name": "Vodka",
-          "image": null,
+          "image": "images/vodka.webp",
           "available": true
         },
         {
           "id": "tequila",
           "name": "Tequila",
-          "image": null,
+          "image": "images/tequila.webp",
           "available": true
         },
         {
           "id": "rhum",
           "name": "Rhum",
-          "image": null,
+          "image": "images/rhum.webp",
           "available": true
         },
         {
           "id": "baileys",
           "name": "Baileys",
-          "image": null,
+          "image": "images/baileys.webp",
           "available": true
         },
         {
           "id": "gin",
           "name": "Gin",
-          "image": null,
+          "image": "images/gin.webp",
           "available": true
         },
         {
           "id": "jagermeister",
           "name": "Jägermeister",
-          "image": null,
+          "image": "images/jager.webp",
           "available": true
         },
         {
           "id": "get27",
           "name": "Get 27",
-          "image": null,
+          "image": "images/get27.webp",
           "available": true
         },
         {
           "id": "get31",
           "name": "Get 31",
-          "image": null,
+          "image": "images/get31.webp",
           "available": true
         },
         {

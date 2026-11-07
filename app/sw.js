@@ -1,6 +1,6 @@
 /* Service worker Cosmo Commande : l'appli fonctionne 100 % hors ligne.
    Tous les chemins sont relatifs : l'appli peut être servie sous un sous-chemin (ex. /cosmo/). */
-const CACHE_VERSION = 'v4'; // À INCRÉMENTER à chaque release (v2, v3...) pour que les téléphones se mettent à jour
+const CACHE_VERSION = 'v5'; // À INCRÉMENTER à chaque release (v2, v3...) pour que les téléphones se mettent à jour
 const SHELL_CACHE = `cosmo-shell-${CACHE_VERSION}`;
 const FONT_CACHE = 'cosmo-fonts'; // polices Google : conservées d'une version à l'autre
 const IMAGE_CACHE = 'cosmo-images'; // photos des produits (images/) : mises en cache à la première utilisation
@@ -21,15 +21,38 @@ const SHELL = [
   'icons/icon-512.png',
   'icons/icon-maskable-512.png',
   'icons/apple-touch-icon.png',
+  'images/CREDITS.md',
 ];
 
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(SHELL_CACHE)
       .then(c => c.addAll(SHELL.map(u => new Request(u, {cache: 'reload'}))))
+      .then(precacheImages)
       .then(() => self.skipWaiting())
   );
 });
+
+/* Photos des produits : toutes celles que menu.json référence sont mises en cache à l'installation
+   (quelques dizaines de Ko chacune), pour que la carte soit complète hors ligne dès la première ouverture,
+   même sans avoir visité chaque écran. Au mieux : un échec ne bloque jamais l'installation (le cache
+   à la première utilisation, plus bas, prend le relais). */
+async function precacheImages() {
+  try {
+    const menu = await (await fetch('menu.json', {cache: 'reload'})).json();
+    const urls = new Set();
+    const walk = x => {
+      if (Array.isArray(x)) x.forEach(walk);
+      else if (x && typeof x === 'object') {
+        if (typeof x.image === 'string' && x.image) urls.add(x.image);
+        Object.values(x).forEach(walk);
+      }
+    };
+    walk(menu);
+    const cache = await caches.open(IMAGE_CACHE);
+    await Promise.allSettled([...urls].map(u => cache.match(u).then(hit => hit || cache.add(u))));
+  } catch (err) { /* hors ligne ou carte illisible : on s'en passe */ }
+}
 
 self.addEventListener('activate', event => {
   event.waitUntil(

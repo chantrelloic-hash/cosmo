@@ -92,6 +92,8 @@ test('parcours complet : commande de 237 €, client, encaissement, fin', async 
   await page.locator('#view').getByRole('button', { name: /Terminé/ }).click();
   await expect(bar(page)).toContainText('Commande vide');
   await expect(page.getByRole('heading', { name: /Qu’est-ce que tu bois/ })).toBeVisible();
+  await expect(page.locator('#cur-order')).toContainText('Aucune boisson pour l’instant');
+  await page.locator('#view').getByRole('button', { name: /^Bière/ }).click();
   await bar(page).click();
   await expect(page.getByText('Rien pour l’instant.')).toBeVisible();
 

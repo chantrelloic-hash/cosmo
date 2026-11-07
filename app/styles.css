@@ -213,7 +213,7 @@ h1{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.1;mar
 .brand .pic.photo{width:100%;height:96px}
 .brand.wide .pic.photo{width:80px;height:80px}
 .brand .pill{white-space:nowrap}
-.spirit .pic.photo{width:64px;height:64px}
+.spirit .pic.photo{width:56px;height:88px;align-self:flex-start}
 .bottle .pic.photo{width:44px;height:60px}
 .pic:not(.photo) svg{width:100%;height:100%}
 
@@ -275,9 +275,85 @@ h1{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.1;mar
 .lefty .total,.lefty .cashline{flex-direction:row-reverse}
 .lefty .toast.act{padding:6px 18px 6px 6px;flex-direction:row-reverse}
 
-@media (prefers-reduced-motion:reduce){.dots.shake{animation:none}*{transition:none!important}.cat:active,.brand:active,.spirit:active,.chip:active,.bigbtn:active{transform:none}}
+@media (prefers-reduced-motion:reduce){.dots.shake{animation:none}*{transition:none!important}.cat:active,.brand:active,.spirit:active,.chip:active,.bigbtn:active,.fav:active,.favs:active,.qbtn:active{transform:none}}
 @media (min-width:480px){.cat,.brand{min-height:210px}.chips{grid-template-columns:repeat(3,1fr)}}
 
 /* Libellé des interrupteurs : suit l'état (aria-checked) */
 .sw span[data-on]::before{content:attr(data-off)}
 .sw[aria-checked="true"] span[data-on]::before{content:attr(data-on)}
+
+/* ===== Accueil : les plus vendus, toute la carte, commande en cours ===== */
+h2.sec{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:22px 0 10px;display:flex;align-items:center;gap:8px}
+h2.sec.fire{color:var(--flame);margin-top:6px}
+h2.sec.fire::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--flame);box-shadow:0 0 12px var(--flame)}
+.favrow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
+.favrow.two{grid-template-columns:1fr 1fr}
+.fav{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:196px;padding:10px 6px 10px;border-radius:var(--r);
+  text-align:center;overflow:hidden;background:var(--bg);color:var(--fg)}
+.fav:active,.favs:active{transform:scale(.97)}
+.fav .pic{width:100%;height:92px}
+.fav .pic.photo img{max-height:92px}
+.fav .logo{display:block;width:44px;height:44px;margin:24px auto 24px}
+.fav .logo svg{width:100%;height:100%}
+.fav .fname{font-family:var(--display);font-weight:900;font-size:14px;line-height:1.05;letter-spacing:-.02em;overflow-wrap:anywhere}
+.fav .fsize{font-size:11px;font-weight:700;opacity:.85;line-height:1.1}
+.fav .pill{margin:auto 0 0;align-self:center;font-size:21px;padding:6px 12px}
+.fav .qty{top:6px;right:6px;min-width:32px;height:32px;font-size:15px}
+.favs{position:relative;display:flex;align-items:center;gap:8px;min-height:132px;padding:12px;border-radius:var(--r);text-align:left;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--spirit) 26%,var(--panel)) 0%,var(--panel) 80%);border:2px solid color-mix(in srgb,var(--spirit) 50%,transparent)}
+.favs .ftxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.favs .pic{flex:none;width:44px;height:52px}
+.favs .pic svg{width:100%;height:100%}
+.favs .sname{font-family:var(--display);font-weight:900;font-size:21px;line-height:1.05;min-width:0;overflow-wrap:anywhere}
+.favs .p1{font-family:var(--display);font-weight:900;font-size:32px;line-height:1.1;margin-top:6px}
+.favs .p2{display:block;font-size:13px;color:var(--muted);font-weight:700;line-height:1.2}
+.favs .p2 b{color:var(--soft);font-family:var(--display);font-size:15px}
+.favs .qty{top:-8px;right:-4px;min-width:32px;height:32px;font-size:15px}
+.cats .cat{min-height:112px;padding:12px;gap:6px}
+.cats .cat svg{width:36px;height:36px}
+.cats .cat .name{font-size:16px}
+.cats .cat .range{font-size:14px}
+
+/* Commande en cours (fin de l'accueil) */
+.cur{margin-top:8px;scroll-margin-top:84px}
+.cur .none{margin:4px 0 0;padding:14px;border-radius:16px;background:var(--panel);color:var(--muted);text-align:center;font-size:15px}
+.cur .total{margin:14px 0}
+.row.h{grid-template-columns:1fr auto auto;gap:8px}
+.row.h .l{font-size:16px;line-height:1.2}
+.row.h .l b{color:var(--flame);font-family:var(--display)}
+.row.h .l small{display:inline;font-size:13px}
+.row.h .lp{font-size:19px;font-weight:900;min-width:58px;text-align:right}
+.row.h .step button{width:46px;height:48px}
+.cur .actions .duo{display:grid;grid-template-columns:1.6fr 1fr;gap:10px}
+.cur .actions .cta{min-height:64px}
+.cur .actions .cta.danger{min-height:64px;font-size:16px}
+
+/* Petite barre de l'accueil : articles + total, mène à la commande, se masque quand elle est visible */
+.bar.mini button{min-height:56px;margin-bottom:8px;border-radius:16px;box-shadow:0 6px 20px #ff7a2f33;padding:0 14px}
+.bar.mini .n{min-width:32px;height:32px}
+.bar.mini .lbl{font-size:15px}
+.bar.mini .tt{font-size:22px}
+.bar.mini.seen{display:none}
+.bar.mini button.off{border-width:1px}
+
+/* Choix « avec quoi ? » d'un favori */
+.choices{display:grid;gap:12px}
+.bigbtn.mx{position:relative;min-height:92px;background:var(--bg);color:var(--fg);border-color:transparent}
+.bigbtn .mxi{flex:none;width:44px;height:44px;display:grid;place-items:center}
+.bigbtn .mxi svg{width:100%;height:100%}
+.bigbtn .grow{flex:1;min-width:0}
+.bigbtn.mx .rupture{right:auto;left:10px;top:8px}
+.choices .bigbtn:not(.mx){min-height:92px}
+.qgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:6px}
+.qbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:150px;border-radius:var(--r);
+  background:var(--panel);border:2px solid color-mix(in srgb,var(--flame) 45%,var(--line))}
+.qbtn b{font-family:var(--display);font-weight:900;font-size:54px;line-height:1;color:var(--flame)}
+.qbtn span{font-family:var(--display);font-weight:700;font-size:20px;color:var(--ink)}
+.qbtn:active{transform:scale(.97);background:var(--panel-2)}
+.lefty .row.h{direction:ltr}
+
+.credit{margin:28px 0 0;text-align:center;font-size:12px;color:var(--muted)}
+.credit a{color:var(--muted);text-decoration:underline}
+.favs .pic.photo{width:56px;height:108px}
+.favs .pic.photo img{max-height:108px}
+.bigbtn .mxi.photo{width:44px;height:64px}

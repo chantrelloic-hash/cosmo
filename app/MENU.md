@@ -29,6 +29,24 @@ Toute la carte est dans `menu.json`. L'appli le lit au démarrage : aucun code �
 | `bottleJuices` | Liste d'`id` de softs proposés en « 1 bouteille de jus » avec une bouteille (`orange`, `pomme`, `ananas`). |
 | `spirits` | Alcools au verre. Prix = prix sec ; avec soft = prix + `softSupplement`. |
 | `bottles` | Paliers de prix : `{ "price": 90, "items": [ ... ] }`. |
+| `favorites` | « Les plus vendus » de l'accueil (voir ci-dessous). |
+
+## Les plus vendus (`favorites`)
+
+Liste ordonnée affichée en haut de l'accueil : les bières sur une ligne de tuiles (un tap = +1 dans la commande), les alcools sur la ligne suivante (tap : « avec quoi ? », puis la quantité 1 à 6).
+
+```json
+"favorites": [
+  { "beer": "heineken" },
+  { "spirit": "rhum", "mixers": ["coca"] },
+  { "spirit": "vodka", "mixers": ["redbull", "pomme"] }
+]
+```
+
+- `beer` : `id` d'une bière de `beers`. `spirit` : `id` d'un alcool de `spirits` qui a un prix (pas une famille à sous-choix comme Whisky ou Get).
+- `mixers` : `id` de softs de mélange (`"mixer": true`) proposés en gros boutons dans « avec quoi ? ». Les boutons « Autre soft » (tous les softs de mélange) et « Rien (sec) » sont toujours ajoutés.
+- Un id inconnu ou masqué (`available: false`) est ignoré. Une rupture réglée sur le téléphone grise la tuile (« Rupture », non cliquable), comme partout ; les prix modifiés dans les réglages et le supplément soft sont repris.
+- Vérifié par `tests/unit/menu.test.js`.
 
 ## Champs d'un produit
 
@@ -41,7 +59,7 @@ Communs à tous : `id` (unique, stable, ne jamais le réutiliser), `name`, `imag
 
 ## Photos
 
-Mettre le fichier dans `images/` (nom = `id` du produit, voir `images/README.md`) et renseigner `"image": "images/heineken.webp"`. La photo remplace le picto, sur le fond de couleur de la marque ; si elle ne charge pas, le picto revient. Les photos sont mises en cache à la première utilisation (hors ligne ensuite) ; pour en changer une, lui donner un nouveau nom de fichier.
+Mettre le fichier dans `images/` (nom = `id` du produit, voir `images/README.md`) et renseigner `"image": "images/heineken.webp"`. La photo remplace le picto, sur le fond de couleur de la marque ; si elle ne charge pas, le picto revient. Les photos référencées par `menu.json` sont mises en cache à l'installation de l'appli (hors ligne dès la première ouverture) ; une photo ajoutée plus tard est mise en cache à sa première utilisation. Sources et licences : `images/CREDITS.md`. Les photos actuelles sont générées par `tools/fetch_product_images.py` ; pour en changer une, lui donner un nouveau nom de fichier.
 
 ## Ajouter une boisson
 
