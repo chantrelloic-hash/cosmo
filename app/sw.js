@@ -1,6 +1,6 @@
 /* Service worker Cosmo Commande : l'appli fonctionne 100 % hors ligne.
    Tous les chemins sont relatifs : l'appli peut être servie sous un sous-chemin (ex. /cosmo/). */
-const CACHE_VERSION = 'v5'; // À INCRÉMENTER à chaque release (v2, v3...) pour que les téléphones se mettent à jour
+const CACHE_VERSION = 'v6'; // À INCRÉMENTER à chaque release (v2, v3...) pour que les téléphones se mettent à jour
 const SHELL_CACHE = `cosmo-shell-${CACHE_VERSION}`;
 const FONT_CACHE = 'cosmo-fonts'; // polices Google : conservées d'une version à l'autre
 const IMAGE_CACHE = 'cosmo-images'; // photos des produits (images/) : mises en cache à la première utilisation
