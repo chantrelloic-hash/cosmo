@@ -20,8 +20,12 @@ test('la commande survit à un rechargement', async ({ page }) => {
   await expect(bar(page).locator('.tt')).toHaveText(euro(14));
   await page.reload();
   await expect(page.getByRole('heading', { name: /Qu’est-ce que tu bois/ })).toBeVisible();
-  await expect(bar(page)).toContainText('2 Corona');
+  await expect(bar(page)).toContainText('2 articles');
   await expect(bar(page).locator('.tt')).toHaveText(euro(14));
+  await expect(page.locator('#cur-order .row').filter({ hasText: 'Corona' })).toContainText('2 × Corona');
+  await expect(page.locator('#cur-order .total b')).toHaveText(euro(14));
+  // l'écran Commande (depuis un autre écran) montre aussi la quantité
+  await page.locator('#view').getByRole('button', { name: /^Bière/ }).click();
   await bar(page).click();
   await expect(page.locator('.row').filter({ hasText: 'Corona' }).locator('output')).toHaveText('2');
 });

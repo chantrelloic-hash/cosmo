@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync, statSync, readdirSync } from 'node:fs';
 
 const raw = readFileSync(new URL('../../app/menu.json', import.meta.url), 'utf8');
 const menu = JSON.parse(raw); // lève si le JSON est invalide
@@ -111,6 +111,75 @@ describe('carte officielle', () => {
   test('tous les produits sont disponibles par défaut', () => {
     for (const p of [...menu.beers, ...menu.softs, ...leaves(menu.spirits), ...bottles]) {
       assert.notEqual(p.available, false, p.id);
+    }
+  });
+});
+
+describe('les plus vendus (favorites)', () => {
+  const favs = menu.favorites;
+  test('liste non vide, chaque entrée est une bière OU un alcool', () => {
+    assert.ok(Array.isArray(favs) && favs.length > 0);
+    for (const f of favs) assert.equal(Number('beer' in f) + Number('spirit' in f), 1, JSON.stringify(f));
+  });
+  test('les bières et alcools cités existent (alcools : produit à prix, pas une famille à sous-choix)', () => {
+    for (const f of favs) {
+      if (f.beer) assert.ok(byId(menu.beers, f.beer), `bière inconnue : ${f.beer}`);
+      if (f.spirit) {
+        const s = byId(menu.spirits, f.spirit);
+        assert.ok(s, `alcool inconnu : ${f.spirit}`);
+        assert.ok(!s.children && Number.isInteger(s.price), `${f.spirit} doit avoir un prix`);
+      }
+    }
+  });
+  test('les softs de mélange cités existent, sont des mélanges, sans doublon', () => {
+    for (const f of favs.filter(x => x.spirit)) {
+      const mixers = f.mixers ?? [];
+      assert.ok(Array.isArray(mixers));
+      assert.equal(new Set(mixers).size, mixers.length, `doublon dans ${f.spirit}`);
+      for (const id of mixers) {
+        const m = byId(menu.softs, id);
+        assert.ok(m, `soft inconnu : ${id}`);
+        assert.equal(m.mixer, true, `${id} n’est pas un soft de mélange`);
+      }
+    }
+  });
+  test('carte demandée par Loïc : Heineken, Desperados, Desperados Rouge, Rhum (Coca), Vodka (Red Bull, pomme)', () => {
+    assert.deepEqual(favs, [
+      { beer: 'heineken' }, { beer: 'desperados' }, { beer: 'desperados-rouge' },
+      { spirit: 'rhum', mixers: ['coca'] }, { spirit: 'vodka', mixers: ['redbull', 'pomme'] },
+    ]);
+  });
+  test('pas de doublon', () => {
+    const keys = favs.map(f => f.beer ?? f.spirit);
+    assert.equal(new Set(keys).size, keys.length);
+  });
+});
+
+describe('photos des produits', () => {
+  const all = [...menu.beers, ...menu.softs, ...menu.spirits, ...leaves(menu.spirits), ...bottles];
+  test('chaque image renseignée est un fichier existant de app/images (WebP, moins de 40 Ko)', () => {
+    for (const p of all.filter(x => x.image)) {
+      assert.match(p.image, /^images\/[a-z0-9-]+\.(webp|png)$/, `${p.id} : chemin ${p.image}`);
+      const url = new URL('../../app/' + p.image, import.meta.url);
+      assert.ok(existsSync(url), `${p.id} : fichier absent ${p.image}`);
+      assert.ok(statSync(url).size < 40 * 1024, `${p.id} : ${p.image} dépasse 40 Ko`);
+    }
+  });
+  test('les photos des favoris existent (bières)', () => {
+    for (const f of menu.favorites.filter(x => x.beer)) {
+      assert.ok(byId(menu.beers, f.beer).image, `photo manquante : ${f.beer}`);
+    }
+  });
+  test('CREDITS.md cite chaque image utilisée', () => {
+    const credits = readFileSync(new URL('../../app/images/CREDITS.md', import.meta.url), 'utf8');
+    for (const f of new Set(all.filter(x => x.image).map(x => x.image))) {
+      assert.ok(credits.includes(f.replace('images/', '')), `crédit manquant : ${f}`);
+    }
+  });
+  test('chaque fichier de app/images (hors docs) est référencé par menu.json', () => {
+    const used = new Set(all.filter(x => x.image).map(x => x.image.replace('images/', '')));
+    for (const f of readdirSync(new URL('../../app/images/', import.meta.url)).filter(n => /\.(webp|png)$/.test(n))) {
+      assert.ok(used.has(f), `image orpheline : ${f}`);
     }
   });
 });

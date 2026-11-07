@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   glassPrice, countSofts, extraSofts, bottlePrice, orderTotal, orderCount, changeDue,
   parsePrice, applyOverride, mergeOverride, sanitizeOverrides, removeOne, sanitizeOrder,
+  linePrice, addToOrder, removeFromOrder,
 } from '../../app/pricing.js';
 
 describe('glassPrice', () => {
@@ -241,5 +242,76 @@ describe('sanitizeOrder', () => {
   test('retire les champs en trop', () => {
     assert.deepEqual(Object.keys(sanitizeOrder([{ key: 'k', label: 'L', price: 5, qty: 1, evil: 1 }])[0]).sort(),
       ['key', 'label', 'price', 'qty', 'sub']);
+  });
+});
+
+describe('lignes de commande : quantités', () => {
+  const heineken = { key: 'biere:heineken', label: 'Heineken', sub: '', price: 5 };
+  const rhumCoca = { key: 'verre:rhum:coca', label: 'Rhum', sub: '+ Coca-Cola', price: 15 };
+
+  test('linePrice : prix unitaire × quantité', () => {
+    assert.equal(linePrice(15, 3), 45);
+    assert.equal(linePrice(10, 1), 10);
+    assert.equal(linePrice(7, 0), 0);
+  });
+
+  test('addToOrder : crée une ligne avec la quantité demandée', () => {
+    const o = addToOrder([], rhumCoca, 3);
+    assert.deepEqual(o, [{ ...rhumCoca, qty: 3 }]);
+    assert.equal(orderTotal(o), 45);
+  });
+
+  test('addToOrder : quantité 1 par défaut, fusion avec la ligne de même clé et même prix', () => {
+    let o = addToOrder([], heineken);
+    o = addToOrder(o, heineken);
+    o = addToOrder(o, heineken, 3);
+    assert.equal(o.length, 1);
+    assert.equal(o[0].qty, 5);
+  });
+
+  test('addToOrder : un prix différent crée une autre ligne (l’ancienne garde son prix)', () => {
+    let o = addToOrder([], heineken, 2);
+    o = addToOrder(o, { ...heineken, price: 6 }, 1);
+    assert.deepEqual(o.map(i => [i.price, i.qty]), [[5, 2], [6, 1]]);
+    assert.equal(orderTotal(o), 16);
+  });
+
+  test('addToOrder ne modifie pas la commande reçue', () => {
+    const o = [{ ...heineken, qty: 1 }];
+    addToOrder(o, heineken, 2);
+    assert.equal(o[0].qty, 1);
+  });
+
+  test('removeFromOrder : annuler un ajout de 3 retire les 3 d’un coup', () => {
+    let o = addToOrder([], heineken, 2);
+    o = addToOrder(o, rhumCoca, 3);
+    o = removeFromOrder(o, rhumCoca.key, rhumCoca.price, 3);
+    assert.deepEqual(o.map(i => [i.key, i.qty]), [['biere:heineken', 2]]);
+  });
+
+  test('removeFromOrder : retire un exemplaire par défaut, supprime la ligne à 0, jamais de quantité négative', () => {
+    let o = addToOrder([], heineken, 2);
+    o = removeFromOrder(o, heineken.key, 5);
+    assert.equal(o[0].qty, 1);
+    o = removeFromOrder(o, heineken.key, 5, 4);
+    assert.deepEqual(o, []);
+  });
+
+  test('removeFromOrder : ne touche que la ligne du bon prix', () => {
+    let o = addToOrder([], heineken, 1);
+    o = addToOrder(o, { ...heineken, price: 6 }, 1);
+    o = removeFromOrder(o, heineken.key, 6);
+    assert.deepEqual(o.map(i => [i.price, i.qty]), [[5, 1]]);
+  });
+
+  test('scénario favoris : 10 + 7 + 45 + 15 + 20 = 97', () => {
+    let o = [];
+    o = addToOrder(o, heineken, 2);
+    o = addToOrder(o, { key: 'biere:desperados-rouge', label: 'Desperados Rouge', sub: '', price: 7 });
+    o = addToOrder(o, rhumCoca, 3);
+    o = addToOrder(o, { key: 'verre:vodka:schweppes', label: 'Vodka', sub: '+ Schweppes', price: glassPrice(10, true, 5) });
+    o = addToOrder(o, { key: 'verre:vodka:sec', label: 'Vodka', sub: 'sec', price: glassPrice(10, false, 5) }, 2);
+    assert.equal(orderTotal(o), 97);
+    assert.equal(orderCount(o), 9);
   });
 });

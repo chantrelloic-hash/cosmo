@@ -164,3 +164,43 @@ export function sanitizeOrder(raw) {
     && Number.isInteger(i.price) && i.price >= 0 && Number.isInteger(i.qty) && i.qty > 0)
     .map(i => ({ key: i.key, label: i.label, sub: typeof i.sub === 'string' ? i.sub : '', price: i.price, qty: i.qty }));
 }
+
+/**
+ * Prix d'une ligne de commande : prix unitaire × quantité.
+ * @param {number} price Prix unitaire.
+ * @param {number} qty Quantité.
+ * @returns {number} price * qty
+ */
+export function linePrice(price, qty) {
+  return price * qty;
+}
+
+/**
+ * Ajoute `qty` exemplaires d'un article : fusionne avec la ligne existante de même clé ET même prix
+ * (si le prix a changé en cours de commande, l'ancienne ligne garde son prix), sinon crée une ligne.
+ * @param {{key: string, price: number, qty: number}[]} order Lignes de commande (non modifiées).
+ * @param {{key: string, label: string, sub?: string, price: number}} item Article à ajouter.
+ * @param {number} [qty=1] Quantité à ajouter (entier > 0).
+ * @returns {object[]} Nouvelle commande.
+ */
+export function addToOrder(order, item, qty = 1) {
+  const hit = order.some(i => i.key === item.key && i.price === item.price);
+  if (hit) return order.map(i => (i.key === item.key && i.price === item.price ? { ...i, qty: i.qty + qty } : i));
+  return [...order, { ...item, qty }];
+}
+
+/**
+ * Retire `qty` exemplaires de la ligne `key` (annuler un ajout de plusieurs boissons, bouton « − ») :
+ * la ligne est supprimée si sa quantité tombe à 0 ou moins.
+ * @param {{key: string, qty: number, price: number}[]} order Lignes de commande (non modifiées).
+ * @param {string} key Clé de la ligne.
+ * @param {number|undefined} price Prix de la ligne visée (si plusieurs lignes ont la même clé) ; `undefined` = toutes.
+ * @param {number} [qty=1] Quantité à retirer.
+ * @returns {object[]} Nouvelle commande.
+ */
+export function removeFromOrder(order, key, price, qty = 1) {
+  const hit = i => i.key === key && (price === undefined || i.price === price);
+  return order
+    .map(i => (hit(i) ? { ...i, qty: i.qty - qty } : i))
+    .filter(i => i.qty > 0);
+}

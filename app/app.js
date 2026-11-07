@@ -1,6 +1,7 @@
 import {
   glassPrice, countSofts, extraSofts, bottlePrice, orderTotal, orderCount, changeDue,
-  parsePrice, applyOverride, mergeOverride, sanitizeOverrides, removeOne, sanitizeOrder,
+  parsePrice, applyOverride, mergeOverride, sanitizeOverrides, removeFromOrder, sanitizeOrder,
+  linePrice, addToOrder,
 } from './pricing.js';
 import { KEYS, read, write, remove } from './store.js';
 import { t, w, isLang, LANGS, LANG_NAMES, HTML_LANG, DEFAULT_LANG } from './i18n.js';
@@ -13,7 +14,8 @@ const W = text => w(lang(), text);
 /* ============ CARTE (chargée depuis menu.json) ============ */
 let SOFT_SUPPLEMENT = 5;
 let BOTTLE_SOFTS = 5; /* avec une bouteille : 5 softs OU 1 bouteille de jus ; au-delà, +SOFT_SUPPLEMENT par soft */
-let BEERS = [], SOFTS = [], MIXERS = [], JUS = [], SPIRITS = [], BOTTLES = [];
+let BEERS = [], SOFTS = [], MIXERS = [], JUS = [], SPIRITS = [], BOTTLES = [], FAVS = [];
+const FAV_QTYS = [1,2,3,4,5,6]; /* quantités proposées après le choix d'un favori (grille 3×2) */
 
 const isAvailable = x => x.available !== false;
 
@@ -57,6 +59,16 @@ function buildMenu(){
     if(!tiers.has(b.price)) tiers.set(b.price, []);
     tiers.get(b.price).push(b);
   }
+  /* Les plus vendus (menu.json > favorites) : seulement des produits de la carte et non masqués ; la rupture
+     (réglages) garde la tuile mais la grise. Un mélange qui n'existe plus est ignoré. */
+  FAVS = (m.favorites||[]).map(f=>{
+    if(f.beer){ const item=BEERS.find(x=>x.id===f.beer); return item ? {type:'beer', item} : null; }
+    if(f.spirit){
+      const item=SPIRITS.find(x=>x.id===f.spirit && !x.children); if(!item) return null;
+      return {type:'spirit', item, mixers:(f.mixers||[]).map(id=>MIXERS.find(x=>x.id===id)).filter(Boolean)};
+    }
+    return null;
+  }).filter(Boolean);
   BOTTLES = [...tiers].sort((x,y)=>y[0]-x[0]).map(([price,items])=>({price, items}));
 }
 
@@ -104,22 +116,26 @@ function home(){ state.stack=[{v:'home'}]; render(true); }
 
 function qtyOf(key){ return state.order.filter(i=>i.key===key).reduce((s,i)=>s+i.qty,0); }
 function qtyPrefix(prefix){ return state.order.filter(i=>i.key.startsWith(prefix)).reduce((s,i)=>s+i.qty,0); }
-function add(item){
+function add(item, qty=1){
   /* même clé ET même prix : si le prix a changé en cours de commande, les anciennes lignes gardent leur prix */
-  const f = state.order.find(i=>i.key===item.key && i.price===item.price);
-  f ? f.qty++ : state.order.push({...item, qty:1});
-  lastAdd = {key:item.key, price:item.price};
+  state.order = addToOrder(state.order, item, qty);
+  lastAdd = {key:item.key, price:item.price, qty};
   try{ if(navigator.vibrate) navigator.vibrate(15); }catch(_){}
-  toast(`+1 ${item.label}${item.sub?' '+item.sub:''} · ${eur(item.price)}`, true);
+  toast(`+${qty} ${item.label}${item.sub?' '+item.sub:''} · ${eur(linePrice(item.price,qty))}`, true);
   render(false);
 }
-/** Annule le dernier ajout (décrémente la ligne, la supprime à 0). */
+/** Annule le dernier ajout (retire les `qty` exemplaires ajoutés d'un coup ; supprime la ligne à 0). */
 let lastAdd = null;
 function undoLast(){
   if(lastAdd==null) return;
-  state.order = removeOne(state.order, lastAdd.key, lastAdd.price);
+  state.order = removeFromOrder(state.order, lastAdd.key, lastAdd.price, lastAdd.qty);
   lastAdd = null;
   hideToast();
+  render(false);
+}
+/** Boutons − / + des lignes de la commande (accueil et écran Commande). */
+function bump(i, d){
+  state.order = d>0 ? addToOrder(state.order, i, d) : removeFromOrder(state.order, i.key, i.price, -d);
   render(false);
 }
 const total = () => orderTotal(state.order);
@@ -150,12 +166,15 @@ const V = {
     const langs = `<div class="langs" role="group" aria-label="${T('langLabel')}">${LANGS.map(l=>`<button class="lang" aria-label="${LANG_NAMES[l]}" aria-pressed="${lang()===l}" ${on(()=>setLang(l))}>${FLAG[l]}<span>${LANG_SHORT[l]}</span></button>`).join('')}</div>`;
     return `${langs}<h1>${T('askDrink')}</h1>
       <p class="hint">${T('hintHome')}</p>
-      <div class="grid">
+      ${favsHTML()}
+      <h2 class="sec">${T('allMenu')}</h2>
+      <div class="grid cats">
         ${cat('--beer','beer',T('catBeer'),fmt(range(BEERS)),'beers')}
         ${cat('--soft','can',T('catSoft'),fmt(range(SOFTS)),'softs')}
         ${cat('--spirit','glass',T('catSpirit'),fmt(range(SPIRITS)),'spirits')}
         ${cat('--bottle','bottle',T('catBottle'),fmt([Math.min(...bottlePrices),Math.max(...bottlePrices)]),'bottles')}
-      </div>`;
+      </div>
+      ${curOrderHTML()}`;
   },
   beers(){ return `<h1>${T('beersH1')}</h1><p class="hint">${T('beersHint')}</p><div class="grid">${BEERS.map(b=>brandCard(b,'biere')).join('')}</div>`; },
   softs(){ return `<h1>${T('softsH1')}</h1><p class="hint">${T('softsHint')}</p><div class="grid">${SOFTS.map(b=>brandCard(b,'soft')).join('')}</div>`; },
@@ -196,6 +215,28 @@ const V = {
       <div class="or">${T('yesWith')} <b class="price-num">${eur(glassPrice(s.price,true,SOFT_SUPPLEMENT))}</b></div>
       <div class="chips">${MIXERS.map(m=>`<button class="chip${m.id==='redbull'?' full':''}${outCls(m)}" style="--bg:${m.bg};--fg:${m.fg};color:${m.fg}" ${act(m,()=>{add({key:`verre:${s.id}:${m.id}`,label,sub:'+ '+W(m.name),price:glassPrice(s.price,true,SOFT_SUPPLEMENT)}); home();})}>${outTag(m)}${ICON[m.logo]}${esc(W(m.name))}</button>`).join('')}</div>`;
   },
+  favMix(s){
+    /* « Rhum : avec quoi ? » : les mélanges favoris, « Autre soft », puis « Rien (sec) » */
+    const fav=FAVS.find(f=>f.item.id===s.id), label=W(s.short||s.name), withP=eur(glassPrice(s.price,true,SOFT_SUPPLEMENT));
+    return `<p class="ask">${T('favAsk',esc(label))}</p>
+      <div class="choices">
+        ${fav.mixers.map(m=>`<button class="bigbtn mx${outCls(m)}" style="--bg:${m.bg};--fg:${m.fg}" ${act(m,()=>go('favQty',{s,mixer:m}))}>${outTag(m)}
+          <span class="mxi">${ICON[m.logo]}</span><span class="grow"><span class="t">${esc(W(m.name))}</span></span><span class="p price-num">${withP}</span></button>`).join('')}
+        <button class="bigbtn" ${on(()=>go('favOther',s))}><span class="mxi" style="color:var(--soft)">${ICON.bubbles}</span><span class="grow"><span class="t">${T('otherSoft')}</span></span><span class="p price-num">${withP}</span></button>
+        <button class="bigbtn" ${on(()=>go('favQty',{s,mixer:null}))}><span class="mxi" style="color:var(--muted)">${glassIcon(s.liquid,s.glass)}</span><span class="grow"><span class="t">${T('noneDry')}</span></span><span class="p price-num">${eur(glassPrice(s.price,false,SOFT_SUPPLEMENT))}</span></button>
+      </div>`;
+  },
+  favOther(s){
+    const label=W(s.short||s.name);
+    return `<p class="ask">${T('otherSoftAsk',esc(label))}</p>
+      <div class="chips">${MIXERS.map(m=>`<button class="chip${m.id==='redbull'?' full':''}${outCls(m)}" style="--bg:${m.bg};--fg:${m.fg};color:${m.fg}" ${act(m,()=>go('favQty',{s,mixer:m}))}>${outTag(m)}${ICON[m.logo]}${esc(W(m.name))}</button>`).join('')}</div>`;
+  },
+  favQty({s,mixer}){
+    const item=spiritMixItem(s,mixer), name=esc(item.label);
+    return `<p class="ask">${name} <em>${esc(item.sub)}</em></p><p class="hint">${T('howMany')}</p>
+      <div class="qgrid">${FAV_QTYS.map(n=>`<button class="qbtn" aria-label="${n} · ${eur(linePrice(item.price,n))}" ${on(()=>{ add(item,n); home(); })}>
+        <b class="price-num">${n}</b><span class="price-num">${eur(linePrice(item.price,n))}</span></button>`).join('')}</div>`;
+  },
   bottles(){
     return `<h1>${T('bottlesH1')}</h1><p class="hint">${T('bottlesHint')}</p>
       ${BOTTLES.map(t=>`<div class="tier"><b class="price-num">${eur(t.price)}</b><span>${T('perBottle')}</span></div>
@@ -232,7 +273,7 @@ const V = {
     if(!state.order.length) return `<h1>Commande</h1><div class="empty">Rien pour l’instant.<br><br><button class="cta ghost" ${on(home)}>Choisir une boisson</button></div>`;
     return `<h1>Commande</h1>
       <div class="rows">${state.order.map(i=>`<div class="row">
-        <div class="step"><button aria-label="Retirer un" ${on(()=>{i.qty--; state.order=state.order.filter(x=>x.qty>0); render(false);})}>−</button><output>${i.qty}</output><button aria-label="Ajouter un" ${on(()=>{i.qty++; render(false);})}>+</button></div>
+        <div class="step"><button aria-label="Retirer un" ${on(()=>bump(i,-1))}>−</button><output>${i.qty}</output><button aria-label="Ajouter un" ${on(()=>bump(i,1))}>+</button></div>
         <div class="l">${esc(i.label)}${i.sub?`<small>${esc(i.sub)}</small>`:''}</div>
         <div class="lp price-num">${eur(i.qty*i.price)}</div></div>`).join('')}</div>
       <div class="total"><span>Total</span><b class="price-num">${eur(total())}</b></div>
@@ -256,6 +297,59 @@ const V = {
       </div>`;
   },
 };
+
+/** Article « alcool au verre » : sec (`mixer` null) ou avec un soft. Mêmes clés que l'écran « avec un soft ? ». */
+function spiritMixItem(s, mixer){
+  const label=W(s.short||s.name);
+  return mixer
+    ? {key:`verre:${s.id}:${mixer.id}`, label, sub:'+ '+W(mixer.name), price:glassPrice(s.price,true,SOFT_SUPPLEMENT)}
+    : {key:`verre:${s.id}:sec`, label, sub:T('dry'), price:glassPrice(s.price,false,SOFT_SUPPLEMENT)};
+}
+function beerItem(b){ return {key:`biere:${b.id}`, label:b.label||b.name, sub:'', price:b.price}; }
+
+/** Section « Les plus vendus » de l'accueil : bières en 1 tap, alcools via « avec quoi ? » puis la quantité. */
+function favsHTML(){
+  const beers=FAVS.filter(f=>f.type==='beer'), spirits=FAVS.filter(f=>f.type==='spirit');
+  if(!FAVS.length) return '';
+  const beerTile=({item:b})=>{
+    const n=qtyOf(`biere:${b.id}`);
+    return `<button class="fav${outCls(b)}" style="--bg:${b.bg};--fg:${b.fg}" ${act(b,()=>add(beerItem(b)))}>
+      ${n?`<span class="qty">${n}</span>`:''}${outTag(b)}
+      ${pic(b,`<span class="logo">${ICON[b.logo]}</span>`,ICON[b.logo],'fv')}
+      <span class="fname">${esc(W(b.name))}</span><span class="fsize">${esc(W(b.size))}</span>
+      <span class="pill price-num">${eur(b.price)}</span></button>`;
+  };
+  const spiritTile=({item:s,mixers})=>{
+    const n=qtyPrefix('verre:'+s.id), icon=glassIcon(s.liquid,s.glass);
+    const go1=()=> s.noSoft ? go('favQty',{s,mixer:null}) : go('favMix',s);
+    return `<button class="favs${outCls(s)}" ${act(s,go1)}>
+      ${n?`<span class="qty">${n}</span>`:''}${outTag(s)}
+      <span class="ftxt"><span class="sname">${esc(W(s.name))}</span>
+        <span class="p1 price-num">${eur(s.price)}</span>
+        ${s.noSoft?'':`<span class="p2">${T('withSoftPrice')} <b class="price-num">${eur(glassPrice(s.price,true,SOFT_SUPPLEMENT))}</b></span>`}</span>
+      ${pic(s,icon,icon,'fs')}</button>`;
+  };
+  return `<h2 class="sec fire">${T('favH')}</h2>
+    ${beers.length?`<div class="favrow">${beers.map(beerTile).join('')}</div>`:''}
+    ${spirits.length?`<div class="favrow two">${spirits.map(spiritTile).join('')}</div>`:''}`;
+}
+
+/** Section « Commande en cours » (fin de l'accueil) : lignes, total, actions. */
+function curOrderHTML(){
+  const rows = state.order.map(i=>`<div class="row h">
+      <div class="l"><b class="price-num">${i.qty} ×</b> ${esc(i.label)}${i.sub?` <small>${esc(i.sub)}</small>`:''}</div>
+      <div class="lp price-num">${eur(linePrice(i.price,i.qty))}</div>
+      <div class="step"><button aria-label="${T('lessOne')}" ${on(()=>bump(i,-1))}>−</button><button aria-label="${T('moreOne')}" ${on(()=>bump(i,1))}>+</button></div></div>`).join('');
+  return `<section id="cur-order" class="cur" aria-label="${T('curOrder')}">
+    <h2 class="sec">${T('curOrder')}</h2>
+    ${state.order.length?`<div class="rows">${rows}</div>`:`<p class="none">${T('noDrinks')}</p>`}
+    <div class="total"><span>${T('total')}</span><b class="price-num">${eur(total())}</b></div>
+    <div class="actions"${state.order.length?'':' hidden'}>
+      <button class="cta" ${on(showCustomer)}>${T('showClient')}</button>
+      <div class="duo"><button class="cta ghost" ${on(()=>{state.received=0; go('cash');})}>${T('cashIn')}</button>
+      <button class="cta danger" ${on(()=>{state.order=[]; lastAdd=null; hideToast(); render(false);})}>${T('clearAll')}</button></div>
+    </div></section>`;
+}
 
 function brandCard(b,kind){
   const key=`${kind}:${b.id}`, n=qtyOf(key);
@@ -304,12 +398,16 @@ function render(scroll){
   document.getElementById('view').innerHTML = V[top.v](top.p);
   document.getElementById('back').hidden = state.stack.length<=1;
   document.getElementById('reset').hidden = state.stack.length<=2;
-  const n=count(), bar=document.getElementById('bar');
-  const summary = state.order.map(i=>`${i.qty} ${esc(i.label)}`).join(', ');
+  const n=count(), bar=document.getElementById('bar'), isHome=top.v==='home';
+  /* accueil : petite barre (articles + total) qui mène à « Commande en cours » ; ailleurs : la barre détaillée */
+  const summary = isHome ? T('items',n) : state.order.map(i=>`${i.qty} ${esc(i.label)}`).join(', ');
   bar.className = n ? '' : 'off';
   bar.innerHTML = `<span class="n">${n}</span><span class="lbl">${n?summary:T('emptyOrder')}</span><span class="tt price-num">${eur(total())}</span>`;
   bar.hidden = top.v==='order'||top.v==='cash';
-  document.querySelector('.bar').hidden = top.v==='order'||top.v==='cash';
+  const wrap=document.querySelector('.bar');
+  wrap.hidden = top.v==='order'||top.v==='cash';
+  wrap.classList.toggle('mini', isHome);
+  watchOrderSection(isHome);
   if(scroll) window.scrollTo(0,0);
   saveOrder();
 }
@@ -326,7 +424,24 @@ document.addEventListener('click',e=>{
 });
 document.getElementById('back').onclick=back;
 document.getElementById('reset').onclick=home;
-document.getElementById('bar').onclick=()=>go('order');
+document.getElementById('bar').onclick=()=>{
+  if(state.stack[state.stack.length-1].v==='home'){
+    const sec=document.getElementById('cur-order');
+    sec && sec.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth', block:'start'});
+  } else go('order');
+};
+
+/* La petite barre de l'accueil se masque quand « Commande en cours » est à l'écran (marge : la barre elle-même). */
+let io = null;
+function watchOrderSection(isHome){
+  const wrap=document.querySelector('.bar');
+  if(io){ io.disconnect(); io=null; }
+  wrap.classList.remove('seen');
+  const sec=isHome && document.getElementById('cur-order');
+  if(!sec || !('IntersectionObserver' in window)) return;
+  io = new IntersectionObserver(es=>{ wrap.classList.toggle('seen', es[es.length-1].isIntersecting); }, {rootMargin:'0px 0px -64px 0px'});
+  io.observe(sec);
+}
 
 /* ============ PRÉFÉRENCES (mode gaucher) ============ */
 const prefs = { lefty:false, lang:DEFAULT_LANG, ...(read(KEYS.prefs, {}) || {}) };
@@ -455,6 +570,7 @@ function settingsHTML(){
       ? `<div class="confirm" id="confirm"><p>Remettre tous les prix, les disponibilités et les suppléments de la carte d’origine&nbsp;?</p>
           <div class="actions"><button class="cta danger solid" data-s="reset-yes">Oui, remettre</button><button class="cta ghost" data-s="reset-no">Non, garder</button></div></div>`
       : `<button class="cta danger" data-s="reset">Remettre la carte d’origine</button>`}
+    <p class="credit">Photos : <a href="images/CREDITS.md" target="_blank" rel="noopener">Open Food Facts, CC-BY-SA</a></p>
   </div>`;
 }
 function drawSheet(scrollTop){

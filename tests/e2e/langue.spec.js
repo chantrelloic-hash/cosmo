@@ -25,8 +25,8 @@ test('portugais du Brésil : accueil, commande d’une bière, total pour le cli
   await expect(page.locator('#toast .undo')).toHaveText('Desfazer');
   await back(page).click();
 
-  await bar(page).click();
-  await page.getByRole('button', { name: 'Montrer au client' }).click();
+  await expect(page.locator('#cur-order')).toContainText('Pedido em andamento');
+  await page.locator('#cur-order').getByRole('button', { name: 'Mostrar ao cliente' }).click();
   await expect(page.locator('#show')).toContainText('TOTAL');
   await expect(page.locator('#show')).toContainText('Toque na tela para voltar');
 });
@@ -41,7 +41,8 @@ test('anglais : un alcool avec un soft traduit, bouteille avec ses verres', asyn
   await expect(page.getByText('with a mixer')).toBeVisible();
   await expect(view(page).getByRole('button', { name: 'No, neat' })).toBeVisible();
   await view(page).getByRole('button', { name: 'No, neat' }).click();
-  await expect(bar(page)).toContainText('Vodka');
+  await expect(page.locator('#cur-order')).toContainText('Vodka');
+  await expect(bar(page)).toContainText('1 item');
 
   await view(page).getByRole('button', { name: /^Bottle/ }).click();
   await view(page).getByRole('button', { name: /^Rum$/ }).click();

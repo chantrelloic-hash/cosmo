@@ -3,7 +3,8 @@
 Une photo par produit, affichée sur la carte au-dessus du nom (sur le fond de couleur de la marque).
 Sans photo, la carte garde son picto d'origine.
 
-- **Format** : WebP (idéal) ou JPG, environ **400 px de hauteur**, fond détouré (WebP/PNG transparent) ou neutre, **moins de 80 Ko** par image.
+- **Format** : WebP avec transparence (fond détouré), environ **320 px de hauteur**, **moins de 40 Ko** par image (vérifié par les tests). Script : `tools/fetch_product_images.py` (Open Food Facts + photos du Cosmo).
+- **Crédits** : toute nouvelle image doit être ajoutée dans `CREDITS.md` (produit, source, licence) ; Open Food Facts = CC-BY-SA 3.0.
 - **Nom du fichier** : l'`id` du produit dans `menu.json`, en minuscules : `heineken.webp`, `desperados-rouge.webp`, `vodka.webp`...
 - **Renseigner la photo** : dans `menu.json`, sur le produit, remplacer `"image": null` par le chemin relatif :
 
