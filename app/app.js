@@ -431,37 +431,64 @@ function teamHTML(){
 const calcEl = document.getElementById('calc');
 let calcTape = [], calcFs = false;
 const KIND = {beer:'--beer', soft:'--soft', glass:'--spirit', neat:'--flame', bottle:'--bottle', supplement:'--soft'};
+/* Touches : un prix par touche, sauf les bouteilles, regroupées sur une seule touche qui ouvre le choix du prix. */
 function calcKeys(){
-  return priceKeys({beers:BEERS, softs:SOFTS, spirits:SPIRITS,
-    bottles:BOTTLES.map(t=>({price:t.price, items:t.items})), softSupplement:SOFT_SUPPLEMENT});
+  return priceKeys({beers:BEERS, softs:SOFTS, spirits:SPIRITS, softSupplement:SOFT_SUPPLEMENT});
 }
-/** Une ligne de rappel sous le prix : type (couleur de la famille) puis noms, 3 au plus (sinon 2 et « +n »). */
+function calcBottleKeys(){
+  return priceKeys({bottles:BOTTLES.map(t=>({price:t.price, items:t.items}))});
+}
+const calcNames = g => g.names.map(x=>esc(W(x).replace(/­/g,'')));
+/** Une ligne de rappel sous le prix : type (couleur de la famille) puis noms ; au-delà de 3 noms, le premier et « +n ». */
 function keyLine(g){
-  const names=g.names.map(x=>esc(W(x).replace(/\u00AD/g,'')));
-  const list=names.length>3 ? `${names.slice(0,2).join(', ')} <em>+${names.length-2}</em>` : names.join(', ');
+  const names=calcNames(g);
+  const list=names.length>3 ? `${names[0]} <em>+${names.length-1}</em>` : names.join(', ');
   const lbl={beer:T('kBeer',names.length), soft:T('kSoft',names.length), glass:T('kGlass'), neat:'', bottle:T('kBottle'), supplement:T('kSupp')}[g.kind];
-  const txt=g.kind==='supplement' ? esc(T('kSuppSub')) : list;
+  const txt=g.kind==='supplement' ? '' : list;
   return `<span class="kl" style="--c:var(${KIND[g.kind]})"><i></i><span>${lbl?`<b>${esc(lbl)}</b> `:''}${txt}</span></span>`;
 }
+let calcView = 'keys'; // 'keys' ou 'bottles' (choix du prix de la bouteille)
 function drawCalc(bump){
-  const keys=calcKeys(), groups=tapeGroups(calcTape), sum=calcTape.reduce((a,b)=>a+b,0);
+  const groups=tapeGroups(calcTape), sum=calcTape.reduce((a,b)=>a+b,0);
+  let pad;
+  if(calcView==='bottles'){
+    const bk=calcBottleKeys();
+    pad = `<div class="calc-keys bottles" style="grid-template-rows:auto repeat(${bk.length},1fr)">
+      <div class="cbh"><b>${T('calcWhichBottle')}</b><button class="calc-back" data-c="keys">← ${T('calcBack')}</button></div>
+      ${bk.map(k=>`<button class="ck cb" style="--c:var(--bottle)" data-c="add" data-p="${k.price}" aria-label="${T('kBottle')} ${k.price} €">
+        <span class="ckp price-num">${k.price}<small>€</small></span>
+        <span class="cbn">${calcNames(k.groups[0]).join(', ')}</span></button>`).join('')}</div>`;
+  } else {
+    const keys=calcKeys(), bk=calcBottleKeys(), n=keys.length+(bk.length?1:0);
+    const bprices=bk.map(k=>k.price);
+    pad = `<div class="calc-keys" style="grid-template-rows:repeat(${Math.ceil(n/2)},1fr)">${keys.map(k=>`<button class="ck" style="--c:var(${KIND[k.groups[0].kind]})" data-c="add" data-p="${k.price}" aria-label="${k.price} €">
+      <span class="ckp price-num">${k.price}<small>€</small></span>
+      <span class="ckl">${k.groups.map(keyLine).join('')}</span></button>`).join('')}
+      ${bk.length?`<button class="ck ckb" style="--c:var(--bottle)" data-c="bottles" aria-label="${T('kBottles')}">
+        <span class="ckp">${T('kBottles')}</span>
+        <span class="ckl"><span class="kl" style="--c:var(--bottle)"><i></i><span class="price-num">${bprices.map(p=>`<b>${p}</b>`).join(' · ')} €</span></span></span></button>`:''}</div>`;
+  }
   calcEl.innerHTML = `<div class="calc-in">
     <div class="calc-top"><h1 id="calcH">${T('calcTitle')}</h1><button class="calc-x" data-c="close">${T('calcClose')}</button></div>
     <div class="calc-screen">
       <div class="calc-tape">${groups.length ? groups.map(g=>`<span class="price-num">${eur(g.price)}${g.qty>1?` <b>×${g.qty}</b>`:''}</span>`).join('<i>+</i>') : `<span class="none">${T('calcHint')}</span>`}</div>
       <output class="calc-total price-num${bump?' bump':''}" aria-live="polite">${eur(sum)}</output>
     </div>
-    <div class="calc-keys">${keys.map(k=>`<button class="ck" style="--c:var(${KIND[k.groups[0].kind]})" data-c="add" data-p="${k.price}" aria-label="${k.price} €">
-      <span class="ckp price-num">${k.price}<small>€</small></span>
-      <span class="ckl">${k.groups.map(keyLine).join('')}</span></button>`).join('')}</div>
+    ${pad}
     <div class="calc-act">
       <button class="cta ghost" data-c="undo" ${calcTape.length?'':'disabled'}>← ${T('undo')}</button>
       <button class="cta danger" data-c="clear" ${calcTape.length?'':'disabled'}>${T('clear')}</button>
-    </div></div>`;
+    </div></div>`;  fitCalc();
+}
+/** Si le texte d'une touche dépasse (petit écran, langue plus longue), resserre l'affichage d'un ou deux crans. */
+function fitCalc(){
+  const pad=calcEl.querySelector('.calc-keys'); if(!pad) return;
+  const over=()=>[...pad.querySelectorAll('.ck')].some(k=>k.scrollHeight>k.clientHeight+1);
+  for(const c of ['fit1','fit2']){ if(!over()) return; pad.classList.add(c); }
 }
 function openCalc(){
   if(!RAW) return;
-  drawCalc(false); calcEl.hidden=false;
+  calcView='keys'; calcEl.hidden=false; drawCalc(false);
   document.documentElement.classList.add('calc-open');
   /* Plein écran du navigateur quand c'est possible (Android) ; sur iPhone, l'appli installée l'est déjà. */
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
@@ -481,7 +508,8 @@ calcEl.addEventListener('click',e=>{
   const b=e.target.closest('[data-c]'); if(!b || b.disabled) return;
   const a=b.dataset.c;
   if(a==='close') return closeCalc();
-  if(a==='add'){ calcTape.push(+b.dataset.p); try{ if(navigator.vibrate) navigator.vibrate(12); }catch(_){} }
+  if(a==='bottles'||a==='keys'){ calcView=a; return drawCalc(false); }
+  if(a==='add'){ calcTape.push(+b.dataset.p); calcView='keys'; try{ if(navigator.vibrate) navigator.vibrate(12); }catch(_){} }
   if(a==='undo') calcTape.pop();
   if(a==='clear') calcTape=[];
   drawCalc(a==='add');

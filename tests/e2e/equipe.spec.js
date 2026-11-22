@@ -2,22 +2,36 @@ import { test, expect, openHome, euro, noHorizontalScroll } from './fixtures.js'
 
 /* Pour l'équipe : calculatrice des tarifs (plein écran) et pense-bête d'ouverture. */
 
-test('calculatrice : uniquement les tarifs de la carte, avec leur rappel ; additionne, corrige, efface', async ({ page }) => {
+test('calculatrice : uniquement les tarifs de la carte, avec leur rappel, bouteilles regroupées ; additionne, corrige, efface', async ({ page }) => {
   await openHome(page);
   await page.getByRole('button', { name: 'Calculatrice' }).first().click();
   const calc = page.getByRole('dialog', { name: 'Calculatrice' });
   await expect(calc).toBeVisible();
   const keys = calc.locator('.ck');
-  await expect(keys).toHaveCount(10);
-  expect(await keys.evaluateAll(ks => ks.map(k => +k.dataset.p))).toEqual([3, 5, 7, 10, 12, 15, 20, 90, 120, 140]);
+  await expect(keys).toHaveCount(8);
+  expect(await calc.locator('.ck[data-p]').evaluateAll(ks => ks.map(k => +k.dataset.p))).toEqual([3, 5, 7, 10, 12, 15, 20]);
   await expect(calc.locator('.ck[data-p="3"]')).toContainText('Eau');
   await expect(calc.locator('.ck[data-p="5"]')).toContainText('Supplément soft');
   await expect(calc.locator('.ck[data-p="10"]')).toContainText('Caïpi maracuja');
-  await expect(calc.locator('.ck[data-p="140"]')).toContainText('Bouteille');
+  await expect(calc.getByRole('button', { name: 'Bouteilles' })).toContainText('90 · 120 · 140');
 
   const total = calc.locator('.calc-total');
   await expect(total).toHaveText(euro(0));
   for (const p of [10, 5, 10, 7]) await calc.getByRole('button', { name: `${p} €`, exact: true }).click();
+  await expect(total).toHaveText(euro(32));
+
+  /* une seule touche « Bouteilles » : on choisit le prix, puis retour aux touches */
+  await calc.getByRole('button', { name: 'Bouteilles' }).click();
+  await expect(calc.getByText('Quelle bouteille')).toBeVisible();
+  await expect(calc.getByRole('button', { name: 'Bouteille 90 €' })).toContainText('Vodka');
+  await expect(calc.getByRole('button', { name: 'Bouteille 120 €' })).toContainText('Champagne Moët');
+  await calc.getByRole('button', { name: 'Bouteille 140 €' }).click();
+  await expect(total).toHaveText(euro(172));
+  await expect(calc.locator('.ck[data-p="3"]')).toBeVisible();
+  await calc.getByRole('button', { name: 'Bouteilles' }).click();
+  await calc.getByRole('button', { name: /Retour/ }).click();
+  await expect(total).toHaveText(euro(172));
+  await calc.getByRole('button', { name: /Annuler/ }).click();
   await expect(total).toHaveText(euro(32));
   await expect(calc.locator('.calc-tape')).toContainText('×2');
   await calc.getByRole('button', { name: /Annuler/ }).click();
@@ -83,3 +97,26 @@ test('ouverture : 9 étapes à cocher, gardées sur le téléphone, « Recommenc
   await expect(page.locator('.opcard[aria-pressed="true"]')).toHaveCount(0);
   await expect(page.getByText('Tout est prêt. On peut ouvrir')).toBeHidden();
 });
+
+/* Tout tient sur un écran, sans défilement, même sur petit téléphone et dans une langue plus longue. */
+for (const [w, h, lang] of [[390, 844, 'fr'], [375, 667, 'pt'], [320, 568, 'en']]) {
+  test(`calculatrice : tout tient sur l’écran sans défiler (${w}×${h}, ${lang})`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await page.addInitScript(l => localStorage.setItem('cosmo.prefs.v1', JSON.stringify({ lang: l })), lang);
+    await page.goto('/');
+    await page.locator('#calcBtn').click();
+    await expect(page.locator('#calc .ck').first()).toBeVisible();
+    const fits = () => page.evaluate(() => {
+      const bad = [];
+      document.querySelectorAll('#calc .calc-in > *, #calc .ck').forEach(e => {
+        const r = e.getBoundingClientRect();
+        if (r.bottom > innerHeight + 0.5 || r.right > innerWidth + 0.5) bad.push(`dépasse : ${e.className}`);
+        if (e.scrollHeight > e.clientHeight + 1) bad.push(`texte coupé : ${e.className} ${e.dataset.p || ''}`);
+      });
+      return bad;
+    });
+    expect(await fits()).toEqual([]);
+    await page.locator('#calc .ckb').click();
+    expect(await fits()).toEqual([]);
+  });
+}

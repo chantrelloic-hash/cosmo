@@ -378,33 +378,44 @@ html.calc-open,html.calc-open body{overflow:hidden}
 .calc{position:fixed;inset:0;z-index:55;background:
     radial-gradient(90% 40% at 50% 0%,#241d5c 0%,transparent 70%),var(--space);
   padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-.calc-in{height:100%;max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:12px;
+.calc-in{box-sizing:border-box;height:100%;max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:12px;
   padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));padding-block:10px 12px}
 .calc-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .calc-top h1{margin:0;font-size:22px}
 .calc-x{min-height:46px;padding:0 18px;border-radius:999px;border:2px solid var(--line);font-weight:800;font-size:15px}
 .calc-screen{flex:none;border-radius:var(--r);padding:12px 16px 10px;background:#05040f;border:2px solid var(--line);
   box-shadow:inset 0 0 40px #0008;display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:0}
-.calc-tape{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px 8px;min-height:24px;color:var(--muted);font-weight:700;font-size:15px;max-width:100%}
+.calc-tape{display:flex;flex-wrap:nowrap;justify-content:flex-end;align-items:center;gap:8px;min-height:22px;color:var(--muted);font-weight:700;font-size:15px;
+  width:100%;overflow:hidden;white-space:nowrap;-webkit-mask-image:linear-gradient(90deg,transparent,#000 24px);mask-image:linear-gradient(90deg,transparent,#000 24px)}
+.calc-tape>*{flex:none}
 .calc-tape i{font-style:normal;color:var(--flame)}
 .calc-tape b{color:var(--ink)}
 .calc-tape .none{font-weight:600}
-.calc-total{font-family:var(--display);font-weight:900;font-size:clamp(52px,17vw,96px);line-height:1;color:var(--flame);
+.calc-total{font-family:var(--display);font-weight:900;font-size:clamp(44px,min(17vw,11vh),96px);line-height:1;color:var(--flame);
   text-shadow:0 0 28px color-mix(in srgb,var(--flame) 45%,transparent);white-space:nowrap}
 .calc-total.bump{animation:bump .18s ease-out}
 @keyframes bump{from{transform:scale(1.06)}to{transform:scale(1)}}
-.calc-keys{flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:minmax(min-content,1fr);gap:10px;
-  padding:2px;margin:-2px;overscroll-behavior:contain}
-.ck{--c:var(--flame);position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:6px;min-width:0;min-height:84px;
-  padding:10px 12px 10px 14px;border-radius:18px;text-align:left;overflow:hidden;
+.calc-keys{flex:1;min-height:0;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;gap:clamp(6px,1.2vh,10px)}
+.ck{--c:var(--flame);position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:4px;min-width:0;min-height:0;
+  padding:clamp(6px,1.3vh,12px) 10px clamp(6px,1.3vh,12px) 14px;border-radius:18px;text-align:left;overflow:hidden;
   background:linear-gradient(170deg,color-mix(in srgb,var(--c) 14%,var(--panel)),var(--panel) 75%);
   border:2px solid color-mix(in srgb,var(--c) 38%,var(--line))}
 .ck::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:4px;border-radius:0 4px 4px 0;background:var(--c)}
 .ck:active{transform:scale(.96);background:color-mix(in srgb,var(--c) 28%,var(--panel))}
-.ckp{font-family:var(--display);font-weight:900;font-size:clamp(30px,9vw,42px);line-height:1;color:var(--ink)}
+.ckp{font-family:var(--display);font-weight:900;font-size:clamp(24px,min(9vw,5.6vh),44px);line-height:1;color:var(--ink)}
+.ckb .ckp{font-size:clamp(15px,min(4.6vw,2.9vh),22px);line-height:1.1;overflow-wrap:anywhere}
+.ckb .kl{font-size:clamp(13px,2vh,16px)}
+.ckb .kl b{color:var(--bottle)}
+.calc-keys.bottles{grid-template-columns:1fr}
+.cbh{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cbh b{font-family:var(--display);font-size:18px}
+.calc-back{min-height:44px;padding:0 16px;border-radius:999px;border:2px solid var(--line);font-weight:800;font-size:15px}
+.ck.cb{flex-direction:row;align-items:center;justify-content:flex-start;gap:16px}
+.ck.cb .ckp{flex:none;min-width:3.2ch;font-size:clamp(30px,min(11vw,7vh),56px)}
+.cbn{min-width:0;color:var(--muted);font-size:clamp(12px,1.9vh,15px);line-height:1.3;overflow-wrap:anywhere}
 .ckp small{font-size:.5em;margin-left:3px;color:var(--c)}
 .ckl{display:flex;flex-direction:column;gap:2px;min-width:0}
-.kl{display:flex;align-items:baseline;gap:6px;font-size:12.5px;line-height:1.25;color:var(--muted);min-width:0}
+.kl{display:flex;align-items:baseline;gap:6px;font-size:clamp(11px,1.75vh,13.5px);line-height:1.22;color:var(--muted);min-width:0}
 .kl i{flex:none;width:7px;height:7px;border-radius:50%;background:var(--c);transform:translateY(-1px)}
 .kl span{min-width:0;overflow-wrap:anywhere}
 .kl b{color:var(--ink);font-weight:800}
@@ -412,7 +423,6 @@ html.calc-open,html.calc-open body{overflow:hidden}
 .calc-act{flex:none;display:grid;grid-template-columns:1.4fr 1fr;gap:10px}
 .calc-act .cta{min-height:58px;font-size:16px}
 .calc-act .cta[disabled]{opacity:.35}
-@media (min-width:600px){.calc-keys{grid-template-columns:repeat(3,1fr)}}
 
 /* ============ Ouverture du Cosmo (pense-bête) ============ */
 .opprog{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:4px 0 14px}
@@ -458,16 +468,18 @@ html.calc-open,html.calc-open body{overflow:hidden}
 .o-t{font-family:var(--display);font-weight:700;fill:var(--ink)}
 .o-tb{font-family:var(--body);font-weight:800}
 @media (prefers-reduced-motion:reduce){.calc-total.bump{animation:none}.opbar i{transition:none}}
-/* Petits téléphones (iPhone SE…) : écran et touches plus compacts pour voir tous les tarifs */
+/* Touches trop pleines (petit écran, langue plus longue) : resserrées par app.js (fit1 puis fit2) */
+.calc-keys.fit1 .ckp{font-size:clamp(20px,min(7.5vw,4.4vh),36px)}
+.calc-keys.fit1 .ck{gap:2px;padding-block:5px}
+.calc-keys.fit1 .ckl{gap:0}
+.calc-keys.fit1 .kl{font-size:11px;line-height:1.15}
+.calc-keys.fit2 .ckp{font-size:clamp(18px,min(6.5vw,3.6vh),30px)}
+.calc-keys.fit2 .kl{font-size:10px;letter-spacing:-.01em}
+/* Petits téléphones (iPhone SE…) : en-tête, écran et actions plus compacts, les touches gardent la place */
 @media (max-height:720px){
   .calc-in{gap:8px;padding-block:6px 8px}
   .calc-top h1{font-size:19px}
   .calc-x{min-height:40px}
   .calc-screen{padding:6px 14px 6px}
-  .calc-total{font-size:48px}
-  .calc-keys{gap:8px}
-  .ck{min-height:0;padding:7px 10px 7px 12px;gap:3px}
-  .ckp{font-size:28px}
-  .kl{font-size:11.5px}
   .calc-act .cta{min-height:50px}
 }
