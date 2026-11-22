@@ -1,4 +1,4 @@
-import { test, expect, euro, openHome, openSettings, typeCode, bar } from './fixtures.js';
+import { test, expect, euro, openHome, openSettings, typeCode, bar, enterOrder } from './fixtures.js';
 
 test('réglages : code, rupture, prix, supplément, remise à zéro', async ({ page }) => {
   await openHome(page);
@@ -51,6 +51,7 @@ test('réglages : code, rupture, prix, supplément, remise à zéro', async ({ p
 
   // les réglages survivent au rechargement
   await page.reload();
+  await enterOrder(page);
   await page.locator('#view').getByRole('button', { name: /^Bière/ }).click();
   await expect(page.locator('#view').getByRole('button', { name: /Corona/ })).toBeDisabled();
 

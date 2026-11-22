@@ -58,6 +58,8 @@ test('la langue choisie est gardée après rechargement ; les réglages restent 
   await openHome(page);
   await page.getByRole('button', { name: 'English' }).click();
   await page.reload();
+  await expect(page.getByRole('heading', { name: 'What do you want to do?' })).toBeVisible();
+  await page.getByRole('button', { name: /Take an order/ }).click();
   await expect(page.getByRole('heading', { name: /What would you like to drink/ })).toBeVisible();
   await expect(page.locator('.langs .lang').nth(2)).toHaveAttribute('aria-pressed', 'true');
 });
