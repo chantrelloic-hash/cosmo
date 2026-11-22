@@ -2,25 +2,28 @@
 
 Appli de prise de commande pour le **Cosmo**, boîte de nuit à Kourou (Guyane). Le serveur (Loïc) entend mal à cause de la musique :
 il tourne l'écran du téléphone vers le client, qui montre du doigt sa boisson, puis on lui montre le total en très gros.
-Tout l'interface est **en français**. Loïc n'est pas développeur : lui parler simplement, en français.
+L'interface est en français par défaut, avec un choix de langue sur l'accueil (français, portugais du Brésil, anglais). Loïc n'est pas développeur : lui parler simplement, en français.
 
 ## Mise en ligne
 
 **L'appli est en ligne** : https://chantrelloic-hash.github.io/cosmo/ (dépôt public, Pages source « GitHub Actions », déploiement automatique à chaque push sur `main`).
-Vérifié le 1er novembre 2026 : page et `menu.json` répondent 200, accueil Bière / Soft / Alcool au verre / Bouteille, aucune erreur console.
+Vérifié le 7 novembre 2026 après la PR #4 (`CACHE_VERSION` v6) : page, `menu.json` et photos répondent 200, accueil avec « Les plus vendus », aucune erreur console.
+Une fusion dans `main` met en ligne tout de suite l'appli utilisée en service : ne fusionner qu'avec l'accord de Loïc et des tests verts, puis vérifier le site.
 Installation : iPhone, Safari → Partager → « Sur l'écran d'accueil » ; Android, Chrome → ⋮ → « Installer l'application ». Rappeler à Loïc de changer le code des réglages (appui long sur « COSMO », 1234 par défaut).
 
 ## Structure
 
 - `app/` : l'appli, servie telle quelle (PWA, JS vanilla en modules ES, **aucun framework, aucune étape de build**).
   - `index.html`, `styles.css`, `app.js` (écrans et interactions), `store.js` (localStorage), `pricing.js` (**calculs purs, sans DOM**).
+  - `i18n.js` : tous les textes affichés, en `fr`, `pt` (Brésil) et `en`. **Tout nouveau texte passe par `i18n.js` dans les 3 langues** (vérifié par `tests/unit/i18n.test.js`).
   - `menu.json` : la carte (produits, prix, couleurs, image optionnelle, disponibilité, `favorites` = « Les plus vendus » de l'accueil). Doc : `app/MENU.md`.
   - `sw.js` : service worker (hors ligne). **Incrémenter `CACHE_VERSION` à chaque modification de l'appli** sinon les téléphones gardent l'ancienne version.
     `menu.json` est servi réseau d'abord (délai 2 s) avec repli sur le cache.
   - `manifest.webmanifest`, `icons/` (générées par `tools/make_icons.py`), `images/` (photos produits WebP < 40 Ko, voir `app/images/README.md` ; **crédits obligatoires dans `app/images/CREDITS.md`**, Open Food Facts CC-BY-SA 3.0 + photos du Cosmo ; générées par `tools/fetch_product_images.py`).
-- `maquette/index.html` : maquette cliquable validée par Loïc (référence visuelle, ne pas modifier).
+- `maquette/index.html` : maquette cliquable validée par Loïc au départ (référence historique, ne pas modifier ; elle n'a ni favoris, ni photos, ni langues).
 - `docs/BRAINSTORM.md` : besoin, parcours, règles de prix, plan en lots (tous faits), questions encore ouvertes.
-- `tests/unit/` (node:test) : `pricing.test.js`, `menu.test.js` (vérifie la carte officielle). `tests/e2e/` (Playwright) : parcours, commande, réglages, hors ligne, mise en page.
+- `tests/unit/` (node:test) : `pricing.test.js`, `menu.test.js` (carte officielle, favoris, images, crédits), `i18n.test.js`. `tests/e2e/` (Playwright) : parcours, commande, favoris, langue, réglages, hors ligne, mise en page.
+  Les tests e2e bloquent les polices Google : vérifier aussi le rendu avec la vraie police (Unbounded, plus large) avant une mise en ligne qui touche aux textes.
 - `.github/workflows/ci.yml` (tests sur PR et `main`), `.github/workflows/pages.yml` (tests unitaires puis déploiement de `app/` sur Pages, sur push `main`).
 
 ## Commandes
@@ -50,7 +53,7 @@ En local, `playwright.config.js` utilise `/opt/pw-browsers/chromium` s'il existe
 - L'accueil montre d'abord « Les plus vendus » (`favorites` dans `menu.json` : Heineken, Desperados, Desperados Rouge en 1 tap ; Rhum et Vodka : « avec quoi ? » puis quantité 1 à 6), puis « Toute la carte » (les 4 familles), puis la section **« Commande en cours »** (lignes avec − / +, total énorme, « Montrer au client », « Encaisser », « Vider »).
 - Sur l'accueil la barre du bas est une petite barre (articles + total) qui défile vers « Commande en cours » et se masque quand cette section est visible ; sur les autres écrans, la barre détaillée ouvre l'écran Commande.
 - Marques servies au bar (photos du client) : vodka Eristoff, gin Bombay London Dry, tequila Camino Real, rhum Saint James Royal Blanc (d'autres rhums au bar, mais pas de choix de marque dans l'appli), Hennessy VS, Get 27 / 31, Baileys, Jägermeister. Ne pas ajouter de produit hors carte officielle (Malibu, Martini, Campari, Ricard...).
-- Le service worker précache toutes les images référencées par `menu.json`.
+- Le service worker précache toutes les images référencées par `menu.json` (cache `cosmo-images`, non vidé par `CACHE_VERSION` : pour remplacer une photo, lui donner un nouveau nom de fichier).
 
 ## Conventions
 
@@ -61,7 +64,8 @@ En local, `playwright.config.js` utilise `/opt/pw-browsers/chromium` s'il existe
 
 ## Pistes pour plus tard (non demandées)
 
-- Photos des bouteilles du bar à ajouter dans `app/images/` (Loïc doit les prendre).
-- Questions ouvertes à Loïc : paiement carte ou espèces seulement ? Plusieurs téléphones / serveurs ?
+- Photos manquantes ou sombres (liste dans `docs/BRAINSTORM.md`) : Loïc doit les prendre de face, sur fond uni.
+- Proposé à Loïc, pas encore demandé : bouton « Payé par carte » (terminal SumUp au bar) ; bouteilles hors carte (Malibu, Martini, Campari, Ricard, Captain Morgan, Bacardi, La Belle Cabresse) à ajouter seulement avec leurs prix ; confirmation sur « Vider ».
+- Question ouverte : plusieurs téléphones / serveurs ?
 - Avertissement GitHub Actions : actions ciblant Node 20 (checkout@v4, configure-pages@v5…), à monter de version quand des versions Node 24 seront disponibles.
 - Maquette publiée (privée) : https://claude.ai/artifact/5hUA5n3SBx7icxJLkYqSxf

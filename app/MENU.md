@@ -16,7 +16,7 @@ Toute la carte est dans `menu.json`. L'appli le lit au démarrage : aucun code �
 
 1. Ouvrir `menu.json`, trouver le produit (chercher son nom), modifier `"price"`.
 2. Publier. **Pas besoin d'incrémenter `CACHE_VERSION`** : `menu.json` est servi réseau d'abord (délai max 2 s, puis copie en cache), donc un téléphone en ligne récupère la nouvelle carte à sa prochaine ouverture, et un téléphone hors ligne garde la dernière carte reçue. L'appli reste 100 % utilisable sans réseau.
-3. N'incrémenter `CACHE_VERSION` dans `sw.js` (`'v2'` devient `'v3'`) que si l'on change le code de l'appli (HTML, CSS, JS) ou la liste des fichiers du précache.
+3. N'incrémenter `CACHE_VERSION` dans `sw.js` (par exemple `'v6'` devient `'v7'`) que si l'on change le code de l'appli (HTML, CSS, JS) ou la liste des fichiers du précache.
 
 ## Structure
 
