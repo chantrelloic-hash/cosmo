@@ -454,7 +454,7 @@ function drawCalc(bump){
   if(calcView==='bottles'){
     const bk=calcBottleKeys();
     pad = `<div class="calc-keys bottles" style="grid-template-rows:auto repeat(${bk.length},1fr)">
-      <div class="cbh"><b>${T('calcWhichBottle')}</b><button class="calc-back" data-c="keys">← ${T('calcBack')}</button></div>
+      <div class="cbh"><b>${T('calcWhichBottle')}</b></div>
       ${bk.map(k=>`<button class="ck cb" style="--c:var(--bottle)" data-c="add" data-p="${k.price}" aria-label="${T('kBottle')} ${k.price} €">
         <span class="ckp price-num">${k.price}<small>€</small></span>
         <span class="cbn">${calcNames(k.groups[0]).join(', ')}</span></button>`).join('')}</div>`;
@@ -476,7 +476,9 @@ function drawCalc(bump){
     </div>
     ${pad}
     <div class="calc-act">
-      <button class="cta ghost" data-c="undo" ${calcTape.length?'':'disabled'}>← ${T('undo')}</button>
+      ${calcView==='bottles'
+        ? `<button class="cta ghost" data-c="keys">← ${T('undo')}</button>`
+        : `<button class="cta ghost" data-c="undo" ${calcTape.length?'':'disabled'}>← ${T('undo')}</button>`}
       <button class="cta danger" data-c="clear" ${calcTape.length?'':'disabled'}>${T('clear')}</button>
     </div></div>`;  fitCalc();
 }

@@ -28,8 +28,11 @@ test('calculatrice : uniquement les tarifs de la carte, avec leur rappel, boutei
   await calc.getByRole('button', { name: 'Bouteille 140 €' }).click();
   await expect(total).toHaveText(euro(172));
   await expect(calc.locator('.ck[data-p="3"]')).toBeVisible();
+  await expect(calc.getByRole('button', { name: /Retour/ })).toHaveCount(0);
+  /* ouvert par erreur : « Annuler » referme le choix sans rien retirer */
   await calc.getByRole('button', { name: 'Bouteilles' }).click();
-  await calc.getByRole('button', { name: /Retour/ }).click();
+  await calc.getByRole('button', { name: /Annuler/ }).click();
+  await expect(calc.locator('.ck[data-p="3"]')).toBeVisible();
   await expect(total).toHaveText(euro(172));
   await calc.getByRole('button', { name: /Annuler/ }).click();
   await expect(total).toHaveText(euro(32));
