@@ -42,7 +42,7 @@ test('pas de défilement horizontal sur les écrans principaux', async ({ page }
   await noHorizontalScroll(page);
   await page.locator('#show').click();
   await page.locator('#view').getByRole('button', { name: /^Encaisser/ }).click();
-  await expect(page.getByRole('heading', { name: 'Encaisser' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Rendre la monnaie' })).toBeVisible();
   await noHorizontalScroll(page);
 });
 

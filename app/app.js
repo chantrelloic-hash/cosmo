@@ -1,5 +1,5 @@
 import {
-  glassPrice, countSofts, extraSofts, bottlePrice, orderTotal, orderCount, changeDue,
+  glassPrice, countSofts, extraSofts, bottlePrice, orderTotal, orderCount, changeDue, changeBreakdown,
   parsePrice, applyOverride, mergeOverride, sanitizeOverrides, removeFromOrder, sanitizeOrder,
   linePrice, addToOrder, priceKeys, undoCalc,
 } from './pricing.js';
@@ -94,7 +94,7 @@ function glassIcon(liquid, kind){
   return `<svg viewBox="0 0 24 24"><path d="M4.5 3.5h15l-1.7 15.9A2 2 0 0 1 15.8 21H8.2a2 2 0 0 1-2-1.6z" fill="#ffffff26"/><path d="M6.2 10.5h11.6l-1.1 8.8a1 1 0 0 1-1 .9H8.3a1 1 0 0 1-1-.9z" fill="${liquid}"/></svg>`;
 }
 /* ============ ÉTAT ============ */
-const state = { stack:[{v:'launch'}], order:sanitizeOrder(read(KEYS.order, [])), received:0 };
+const state = { stack:[{v:'launch'}], order:sanitizeOrder(read(KEYS.order, [])) };
 const eur = n => `${n} €`;
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 let A = []; // actions de l'écran courant
@@ -191,6 +191,8 @@ const V = {
           n?`<span class="ltb live price-num" aria-label="${T('curOrder')}">${T('items',n)} · ${eur(total())}</span>`:'',
           ()=>{ state.stack.push({v:'home'}); render(true); })}
         ${tile('lt-calc',CALC_ICON,T('calcTitle'),T('calcSub'),'',openCalc)}
+        ${tile('lt-change',CHANGE_ICON,T('changeTitle'),T('changeSub'),
+          n?`<span class="ltb price-num">${T('toPay')} · ${eur(total())}</span>`:'',openChange)}
         ${tile('lt-open',OPEN_ICON,T('openTitle'),T('openCheck'),
           `<span class="ltb price-num">${T('openSub',done)}</span>`,
           ()=>{ state.openConfirm=false; go('opening'); })}
@@ -299,7 +301,7 @@ const V = {
       <div class="total"><span>Total</span><b class="price-num">${eur(total())}</b></div>
       <div class="actions">
         <button class="cta" ${on(showCustomer)}>Montrer au client</button>
-        <button class="cta ghost" ${on(()=>{state.received=0; go('cash');})}>Encaisser · rendu monnaie</button>
+        <button class="cta ghost" ${on(openChange)}>Encaisser · rendu monnaie</button>
       </div>`;
   },
   opening(){
@@ -321,19 +323,6 @@ const V = {
             <span class="optick" aria-hidden="true">${CHECK}</span>
             ${ok?`<span class="sr">${T('stepDone')}</span>`:''}</span>
         </button>`;}).join('')}</div>`;
-  },
-  cash(){
-    const t=total(), r=changeDue(state.received,t);
-    const bills=[{v:5,bg:'#B8B0A6'},{v:10,bg:'#E58B7A'},{v:20,bg:'#7FA8E0'},{v:50,bg:'#F2A65A'},{v:100,bg:'#7BC77A'}];
-    return `<h1>Encaisser</h1><p class="hint">Touche les billets que le client te donne.</p>
-      <div class="cashline"><span>À payer</span><b class="price-num">${eur(t)}</b></div>
-      <div class="bills">${bills.map(b=>`<button class="bill price-num" style="--bg:${b.bg}" ${on(()=>{state.received+=b.v; render(false);})}>${b.v}&nbsp;€</button>`).join('')}
-        <button class="bill" style="--bg:#34307A;color:#F6F4FF;font-size:16px" ${on(()=>{state.received=0; render(false);})}>Effacer</button></div>
-      <div class="cashline"><span>Reçu</span><b class="price-num">${eur(state.received)}</b></div>
-      <div class="cashline rendu ${r<0?'manque':''}"><span>${r<0?'Il manque':'À rendre'}</span><b class="price-num">${eur(Math.abs(r))}</b></div>
-      <div class="actions" style="margin-top:18px">
-        <button class="cta" ${on(()=>{state.order=[]; state.received=0; lastAdd=null; toast('Commande terminée'); home();})}>Terminé · nouvelle commande</button>
-      </div>`;
   },
 };
 
@@ -385,7 +374,7 @@ function curOrderHTML(){
     <div class="total"><span>${T('total')}</span><b class="price-num">${eur(total())}</b></div>
     <div class="actions"${state.order.length?'':' hidden'}>
       <button class="cta" ${on(showCustomer)}>${T('showClient')}</button>
-      <button class="cta ghost" ${on(()=>{state.received=0; go('cash');})}>${T('cashIn')}</button>
+      <button class="cta ghost" ${on(openChange)}>${T('cashIn')}</button>
     </div></section>`;
 }
 
@@ -425,6 +414,7 @@ function pickSpirit(s){
 const CHECK = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const CALC_ICON = document.getElementById('calcBtn').innerHTML;
 const NEW_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.3-5.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M4 3.5v4.6h4.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const CHANGE_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="15" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9.5" cy="11" r="2.2" fill="currentColor"/><circle cx="17.5" cy="16.5" r="4.5" fill="currentColor"/><path d="M16 16.5h3" stroke="var(--space)" stroke-width="1.6" stroke-linecap="round"/></svg>`;
 const OPEN_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="19" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 3.5h6v3H9z" fill="currentColor"/><path d="M7.5 12l2 2 3.5-3.5M7.5 17.5l2 2 3.5-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 /** Étapes d'ouverture cochées (ids connus seulement). */
@@ -444,7 +434,7 @@ const calcItem = p => ({key:`calc:${p}`, label:T('calcTitle'), sub:`${p}\u00a0�
 const hasCalc = () => state.order.some(i=>i.key.startsWith('calc:'));
 /** Nouveau client : vide la commande (boissons et prix de la calculatrice). */
 function newClient(){
-  state.order=[]; state.received=0; lastAdd=null; calcHist=[];
+  state.order=[]; lastAdd=null; calcHist=[]; given=[]; changeStep='give';
   hideToast(); render(false);
   if(!calcEl.hidden) drawCalc(true);
 }
@@ -547,6 +537,87 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !calcEl.hidden) 
 document.getElementById('calcBtn').onclick=openCalc;
 document.getElementById('newBtn').onclick=newClient;
 
+/* ============ RENDRE LA MONNAIE (plein écran) ============
+   Lié à la commande : « À payer » = total de la commande (écran client + calculatrice).
+   On touche ce que le client donne (billets 5 à 100 €, pièces 1 et 2 €), « Valider » affiche
+   quoi rendre en billets de 20 / 10 / 5 et pièces de 2 / 1 (changeBreakdown), « Terminé »
+   remet tout à zéro et revient à la page de lancement. */
+const chgEl = document.getElementById('change');
+let given = [], changeStep = 'give';
+const BILLS = [5,10,20,50,100], COINS = [1,2];
+/** Billet (classe bill-<valeur>, couleurs des vrais billets) ou pièce (bicolore) dessinés en CSS. */
+const money = (v, cls='') => v<=2
+  ? `<span class="coin coin-${v} ${cls}"><b class="price-num">${v}</b><small>€</small></span>`
+  : `<span class="bill bill-${v} ${cls}"><b class="price-num">${v}</b><small>€</small></span>`;
+function drawChange(){
+  const t=total(), rec=given.reduce((a,b)=>a+b,0), r=changeDue(rec,t);
+  const qty=v=>given.filter(x=>x===v).length;
+  const top=`<div class="calc-top"><h1 id="chgH">${T('changeTitle')}</h1><button class="calc-x" data-g="close">${T('calcClose')}</button></div>`;
+  if(changeStep==='result'){
+    const parts=changeBreakdown(r);
+    chgEl.innerHTML=`<div class="calc-in chg">${top}
+      <div class="chg-res${r?'':' exact'}">
+        <span class="lbl">${r?T('toGive'):T('exact')}</span>
+        <output class="big price-num">${eur(r)}</output>
+        <span class="sub price-num">${T('toPay')} ${eur(t)} · ${T('received')} ${eur(rec)}</span>
+      </div>
+      <div class="chg-give" style="grid-template-rows:repeat(${Math.max(parts.length,1)},1fr)">
+        ${parts.length?parts.map(p=>`<div class="gv">${money(p.value)}<span class="x price-num">× ${p.qty}</span></div>`).join('')
+          :`<div class="gv ok">${CHECK}<span>${T('nothingBack')}</span></div>`}
+      </div>
+      <div class="calc-act two">
+        <button class="cta ghost" data-g="fix">← ${T('fix')}</button>
+        <button class="cta done" data-g="done">${CHECK}${T('done')}</button>
+      </div></div>`;
+    return;
+  }
+  const status = !t ? `<span class="st">${T('noOrder')}</span>`
+    : r<0 ? `<span class="st miss">${T('missing')} <b class="price-num">${eur(-r)}</b></span>`
+    : `<span class="st ok">${CHECK}${T('enough')}</span>`;
+  chgEl.innerHTML=`<div class="calc-in chg">${top}
+    <div class="chg-screen">
+      <div class="cs"><span>${T('toPay')}</span><b class="price-num pay">${eur(t)}</b></div>
+      <div class="cs"><span>${T('received')}</span><b class="price-num">${eur(rec)}</b></div>
+      ${status}
+    </div>
+    <p class="chg-hint">${T('changeHint')}</p>
+    <div class="chg-pad">
+      ${BILLS.map(v=>`<button class="mb" data-g="add" data-v="${v}" aria-label="${v} €">${money(v)}${qty(v)?`<span class="qty price-num">${qty(v)}</span>`:''}</button>`).join('')}
+      <div class="mcoins">${COINS.map(v=>`<button class="mb" data-g="add" data-v="${v}" aria-label="${v} €">${money(v)}${qty(v)?`<span class="qty price-num">${qty(v)}</span>`:''}</button>`).join('')}</div>
+    </div>
+    <div class="calc-act two">
+      <button class="cta ghost" data-g="undo" ${given.length?'':'disabled'}>← ${T('undo')}</button>
+      <button class="cta" data-g="ok" ${t&&r>=0?'':'disabled'}>${T('validate')}</button>
+    </div></div>`;
+}
+function openChange(){
+  if(!RAW) return;
+  changeStep='give'; chgEl.hidden=false; drawChange();
+  document.documentElement.classList.add('calc-open');
+  chgEl.querySelector('.calc-x').focus();
+}
+function closeChange(){
+  chgEl.hidden=true; chgEl.innerHTML='';
+  if(calcEl.hidden) document.documentElement.classList.remove('calc-open');
+}
+chgEl.addEventListener('click',e=>{
+  const b=e.target.closest('[data-g]'); if(!b || b.disabled) return;
+  const a=b.dataset.g;
+  if(a==='close') return closeChange();
+  if(a==='add'){ given.push(+b.dataset.v); try{ if(navigator.vibrate) navigator.vibrate(12); }catch(_){} }
+  if(a==='undo') given.pop();
+  if(a==='ok') changeStep='result';
+  if(a==='fix') changeStep='give';
+  if(a==='done'){
+    newClient(); closeChange();
+    if(!calcEl.hidden) closeCalc();
+    state.stack=[{v:'launch'}]; render(true);
+    return;
+  }
+  drawChange();
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !chgEl.hidden) closeChange(); });
+
 function showCustomer(){
   const el=document.getElementById('show');
   el.innerHTML = state.order.map(i=>`<div class="ln"><span>${i.qty} × ${esc(i.label)}${i.sub?' '+esc(i.sub):''}</span><b class="price-num">${eur(i.qty*i.price)}</b></div>`).join('')
@@ -567,7 +638,7 @@ function render(scroll){
   const summary = isHome ? T('items',n) : state.order.map(i=>`${i.qty} ${esc(i.label)}`).join(', ');
   bar.className = n ? '' : 'off';
   bar.innerHTML = `<span class="n">${n}</span><span class="lbl">${n?summary:T('emptyOrder')}</span><span class="tt price-num">${eur(total())}</span>`;
-  const noBar = top.v==='order'||top.v==='cash'||top.v==='opening'||top.v==='launch';
+  const noBar = top.v==='order'||top.v==='opening'||top.v==='launch';
   bar.hidden = noBar;
   const wrap=document.querySelector('.bar');
   wrap.hidden = noBar;

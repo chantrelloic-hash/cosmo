@@ -125,20 +125,21 @@ for (const [w, h, lang] of [[390, 844, 'fr'], [375, 667, 'pt'], [320, 568, 'en']
   });
 }
 
-test('lancement : 3 grands boutons qui mènent à la commande, à la calculatrice et à l’ouverture', async ({ page }) => {
+test('lancement : 4 grands boutons qui mènent à la commande, à la calculatrice, au rendu de monnaie et à l’ouverture', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Que veux-tu faire ?' })).toBeVisible();
   const tiles = page.locator('#view .lt');
-  await expect(tiles).toHaveCount(3);
+  await expect(tiles).toHaveCount(4);
   await expect(tiles.nth(0)).toContainText('Prise de commande');
   await expect(tiles.nth(1)).toContainText('Calculatrice');
-  await expect(tiles.nth(2)).toContainText('Ouverture du Cosmo');
+  await expect(tiles.nth(2)).toContainText('Rendre la monnaie');
+  await expect(tiles.nth(3)).toContainText('Ouverture du Cosmo');
   await expect(page.locator('.bar')).toBeHidden();
   await expect(page.locator('#calcBtn')).toBeHidden();
   await noHorizontalScroll(page);
 
   /* les 3 boutons tiennent sur l'écran, sans défiler */
-  const bottom = await tiles.nth(2).evaluate(e => e.getBoundingClientRect().bottom);
+  const bottom = await tiles.nth(3).evaluate(e => e.getBoundingClientRect().bottom);
   expect(bottom).toBeLessThanOrEqual(844);
 
   /* commande : une commande en cours se voit sur le bouton ; « Retour » ramène au lancement */
@@ -155,10 +156,10 @@ test('lancement : 3 grands boutons qui mènent à la commande, à la calculatric
   await expect(page.getByRole('heading', { name: 'Que veux-tu faire ?' })).toBeVisible();
 
   /* ouverture, puis retour */
-  await tiles.nth(2).click();
+  await tiles.nth(3).click();
   await expect(page.getByRole('heading', { name: 'Ouverture du Cosmo' })).toBeVisible();
   await page.getByRole('button', { name: 'Retour' }).click();
-  await expect(tiles).toHaveCount(3);
+  await expect(tiles).toHaveCount(4);
 });
 
 test('calculatrice et écran client partagent la même commande ; « Nouveau client » remet tout à zéro', async ({ page }) => {
@@ -219,4 +220,59 @@ test('calculatrice et écran client partagent la même commande ; « Nouveau cli
   await calc.getByRole('button', { name: 'Fermer' }).click();
   await expect(cur.locator('.total b')).toHaveText(euro(0));
   await expect(page.getByRole('button', { name: 'Nouveau client' })).toBeDisabled();
+});
+
+test('rendre la monnaie : 4e bouton, lié à la commande et à la calculatrice ; Terminé remet tout à zéro', async ({ page }) => {
+  await openHome(page);
+  await page.locator('#view .fav').filter({ hasText: 'Heineken' }).click(); // 5 €
+  await page.locator('#calcBtn').click();
+  const calc = page.getByRole('dialog', { name: 'Calculatrice' });
+  await calc.getByRole('button', { name: '15 €', exact: true }).click();
+  await calc.getByRole('button', { name: '7 €', exact: true }).click(); // total 27 €
+  await calc.getByRole('button', { name: 'Fermer' }).click();
+  await page.getByRole('button', { name: 'Retour' }).click();
+
+  const tile = page.locator('#view .lt-change');
+  await expect(tile).toContainText('27 €');
+  await tile.click();
+  const chg = page.getByRole('dialog', { name: 'Rendre la monnaie' });
+  await expect(chg.locator('.cs b.pay')).toHaveText(euro(27));
+  await expect(chg.getByRole('button', { name: 'Valider' })).toBeDisabled();
+  /* 7 boutons : billets 5, 10, 20, 50, 100 et pièces 1, 2 ; le nombre de chaque s'affiche */
+  await expect(chg.locator('.mb')).toHaveCount(7);
+  await chg.getByRole('button', { name: '20 €', exact: true }).click();
+  await chg.getByRole('button', { name: '20 €', exact: true }).click();
+  await chg.getByRole('button', { name: '2 €', exact: true }).click();
+  await expect(chg.getByRole('button', { name: '20 €', exact: true }).locator('.qty')).toHaveText('2');
+  await expect(chg.locator('.cs').nth(1).locator('b')).toHaveText(euro(42));
+  await expect(chg.locator('.st')).toContainText('C’est bon');
+
+  /* Valider : 15 € à rendre = 1 billet de 10 + 1 billet de 5 */
+  await chg.getByRole('button', { name: 'Valider' }).click();
+  await expect(chg.locator('.chg-res .big')).toHaveText(euro(15));
+  await expect(chg.locator('.gv')).toHaveCount(2);
+  await expect(chg.locator('.gv').nth(0).locator('.bill-10')).toBeVisible();
+  await expect(chg.locator('.gv').nth(0)).toContainText('× 1');
+  await expect(chg.locator('.gv').nth(1).locator('.bill-5')).toBeVisible();
+
+  /* tout tient sur l'écran (saisie et résultat) */
+  const fits = () => page.evaluate(() => [...document.querySelectorAll('#change .calc-in > *, #change .mb, #change .gv')]
+    .filter(e => { const r = e.getBoundingClientRect(); return r.bottom > innerHeight + 0.5 || r.right > innerWidth + 0.5; }).length);
+  expect(await fits()).toBe(0);
+  await chg.getByRole('button', { name: /Corriger/ }).click();
+  /* chaque billet / pièce reste dans sa case */
+  expect(await page.evaluate(() => [...document.querySelectorAll('#change .mb')].every(m => {
+    const c = m.firstElementChild.getBoundingClientRect(), r = m.getBoundingClientRect();
+    return c.left >= r.left - 0.5 && c.right <= r.right + 0.5 && c.top >= r.top - 0.5 && c.bottom <= r.bottom + 0.5;
+  }))).toBe(true);
+  expect(await fits()).toBe(0);
+  await chg.getByRole('button', { name: 'Valider' }).click();
+
+  /* Terminé : retour à la page de lancement, commande et calculatrice à zéro */
+  await chg.getByRole('button', { name: /Terminé/ }).click();
+  await expect(chg).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'Que veux-tu faire ?' })).toBeVisible();
+  await expect(tile).not.toContainText('€');
+  await page.locator('#view .lt-calc').click();
+  await expect(calc.locator('.calc-total')).toHaveText(euro(0));
 });

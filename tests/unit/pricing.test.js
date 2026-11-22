@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   glassPrice, countSofts, extraSofts, bottlePrice, orderTotal, orderCount, changeDue,
   parsePrice, applyOverride, mergeOverride, sanitizeOverrides, removeOne, sanitizeOrder,
-  linePrice, addToOrder, removeFromOrder, priceKeys, undoCalc,
+  linePrice, addToOrder, removeFromOrder, priceKeys, undoCalc, changeBreakdown,
 } from '../../app/pricing.js';
 import { readFileSync } from 'node:fs';
 
@@ -388,5 +388,27 @@ describe('undoCalc (Annuler de la calculatrice)', () => {
   });
   test('la ligne disparaît à 0', () => {
     assert.deepEqual(undoCalc([heineken, c10], [10]).order, [heineken]);
+  });
+});
+
+describe('changeBreakdown (rendre la monnaie)', () => {
+  const b = a => changeBreakdown(a).map(x => `${x.qty}×${x.value}`).join(' ');
+  test('billets de 20, 10, 5 et pièces de 2, 1 seulement', () => {
+    assert.equal(b(38), '1×20 1×10 1×5 1×2 1×1');
+    assert.equal(b(13), '1×10 1×2 1×1');
+    assert.equal(b(60), '3×20');
+    assert.equal(b(4), '2×2');
+    assert.equal(b(7), '1×5 1×2');
+  });
+  test('jamais de billet de 50 ou 100 : 150 € = 7 × 20 + 10', () => {
+    assert.equal(b(150), '7×20 1×10');
+  });
+  test('rien à rendre : 0, négatif ou invalide', () => {
+    assert.deepEqual(changeBreakdown(0), []);
+    assert.deepEqual(changeBreakdown(-5), []);
+    assert.deepEqual(changeBreakdown(undefined), []);
+  });
+  test('la somme rendue est toujours exacte', () => {
+    for (let a = 0; a <= 500; a++) assert.equal(changeBreakdown(a).reduce((s, x) => s + x.value * x.qty, 0), a);
   });
 });

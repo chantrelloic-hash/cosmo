@@ -10,6 +10,7 @@
   --flame:#FF7A2F;      /* flamme de fusée : total, actions principales */
   --flame-ink:#1A0A00;
   --warn:#FF5470;
+  --ok:#3EE08F;      /* validé, rendu de monnaie */
   --beer:#F5B700; --soft:#2BD4F0; --spirit:#B98AFF; --bottle:#EBD39A;
   --display:'Unbounded','Arial Black',system-ui,sans-serif;
   --body:'Archivo',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
@@ -167,11 +168,6 @@ h1{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.1;mar
 .empty{padding:40px 10px;text-align:center;color:var(--muted)}
 
 /* Caisse */
-.bills{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
-.bill{min-height:72px;border-radius:14px;font-family:var(--display);font-weight:900;font-size:24px;color:#10131a;background:var(--bg)}
-.cashline{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--line)}
-.cashline span{color:var(--muted);font-weight:700}
-.cashline b{font-family:var(--display);font-weight:900;font-size:26px}
 .rendu b{font-size:52px;color:var(--soft)}
 .rendu.manque b{color:var(--warn)}
 
@@ -272,7 +268,7 @@ h1{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.1;mar
 .lefty .mark{align-items:flex-end;text-align:right}
 .lefty .bar button{flex-direction:row-reverse}
 .lefty .bar .lbl{text-align:right}
-.lefty .total,.lefty .cashline{flex-direction:row-reverse}
+.lefty .total{flex-direction:row-reverse}
 .lefty .toast.act{padding:6px 18px 6px 6px;flex-direction:row-reverse}
 
 @media (prefers-reduced-motion:reduce){.dots.shake{animation:none}*{transition:none!important}.cat:active,.brand:active,.spirit:active,.chip:active,.bigbtn:active,.fav:active,.favs:active,.qbtn:active{transform:none}}
@@ -392,8 +388,8 @@ h2.sec.fire::before{content:"";width:10px;height:10px;border-radius:50%;backgrou
 .lh{margin:4px 0 14px}
 body.is-launch{height:auto}
 body.is-launch .app{min-height:0;padding-bottom:max(16px,env(safe-area-inset-bottom,0px))}
-.launch{display:grid;gap:14px;grid-template-rows:repeat(3,minmax(112px,1fr));
-  min-height:calc(100dvh - 142px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
+.launch{display:grid;gap:12px;grid-template-rows:repeat(4,minmax(92px,1fr));
+  min-height:calc(100dvh - 152px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
 .ltb.live{display:inline-flex;align-items:center;gap:7px}
 .ltb.live::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c)}
 .lt{--c:var(--flame);position:relative;display:flex;align-items:center;gap:16px;padding:18px 18px 18px 20px;border-radius:26px;text-align:left;overflow:hidden;
@@ -404,7 +400,7 @@ body.is-launch .app{min-height:0;padding-bottom:max(16px,env(safe-area-inset-bot
   box-shadow:0 10px 30px -18px var(--c)}
 .lt::after{content:"";position:absolute;right:-40px;bottom:-60px;width:180px;height:180px;border-radius:50%;
   background:radial-gradient(circle,color-mix(in srgb,var(--c) 22%,transparent),transparent 70%);pointer-events:none}
-.lt-order{--c:var(--flame)} .lt-calc{--c:var(--spirit)} .lt-open{--c:var(--soft)}
+.lt-order{--c:var(--flame)} .lt-calc{--c:var(--spirit)} .lt-change{--c:var(--ok)} .lt-open{--c:var(--soft)}
 .lt:active{transform:scale(.98)}
 .lti{flex:none;width:clamp(58px,17vw,76px);height:clamp(58px,17vw,76px);border-radius:22px;display:grid;place-items:center;
   background:var(--c);color:var(--space);box-shadow:0 0 24px -6px var(--c)}
@@ -545,3 +541,84 @@ html.calc-open,html.calc-open body{overflow:hidden}
   .calc-top .newc{margin-left:0}
   .calc-top{justify-content:space-between}
 }
+
+/* ============ Rendre la monnaie (plein écran, même cadre que la calculatrice) ============
+   En haut : à payer / reçu / état ; au milieu : billets et pièces (2 colonnes × 3) ; en bas : Annuler + Valider.
+   Résultat : « À rendre » énorme, puis les billets et pièces à donner, × quantité. */
+.chg-screen{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;padding:10px 16px;border-radius:var(--r);background:#05040f;border:2px solid var(--line)}
+.cs{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cs span{color:var(--muted);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.08em}
+.cs b{font-family:var(--display);font-weight:900;font-size:clamp(30px,min(10vw,6vh),48px);line-height:1}
+.cs b.pay{color:var(--flame)}
+.cs:nth-child(2){text-align:right}
+.st{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;padding:7px 10px;border-radius:12px;
+  font-weight:800;font-size:16px;background:var(--panel);color:var(--muted)}
+.st.miss{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.st.ok{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}
+.st svg{width:20px;height:20px}
+.chg-hint{margin:0;text-align:center;color:var(--muted);font-size:14px}
+.chg-pad{flex:1;min-height:0;display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(3,1fr);gap:10px}
+.mcoins{display:grid;grid-template-columns:1fr 1fr;gap:10px;min-height:0}
+.mb{position:relative;display:grid;place-items:center;min-height:0;min-width:0;border-radius:18px;background:var(--panel);border:2px solid var(--line);padding:6px}
+.mb:active{transform:scale(.95);background:var(--panel-2)}
+.mb .qty{position:absolute;top:6px;right:6px;min-width:28px;height:28px;padding:0 6px;border-radius:999px;display:grid;place-items:center;
+  background:var(--flame);color:var(--flame-ink);font-family:var(--display);font-weight:900;font-size:15px}
+/* Billets : couleurs des vrais billets en euros */
+.bill{--b:#9C9C94;--b2:#C9C6BC;position:relative;display:flex;align-items:center;justify-content:center;gap:2px;width:100%;max-width:150px;aspect-ratio:1.9;border-radius:8px;
+  background:linear-gradient(135deg,var(--b2),var(--b) 60%);color:#141414;box-shadow:inset 0 0 0 3px #ffffff40,0 4px 10px -4px #000;overflow:hidden}
+.bill::before{content:"";position:absolute;left:10%;top:18%;bottom:18%;width:22%;border-radius:50%;background:#ffffff38}
+.bill b{position:relative;font-family:var(--display);font-weight:900;font-size:clamp(20px,6vw,34px);line-height:1}
+.bill small{position:relative;font-weight:900;font-size:.9em}
+.bill-5{--b:#8E9A93;--b2:#C8CFC8} .bill-10{--b:#D9534F;--b2:#F2A49A} .bill-20{--b:#3D7CC9;--b2:#9CC3F0}
+.bill-50{--b:#E58A2E;--b2:#F7C38A} .bill-100{--b:#3FA86A;--b2:#9CDDB1}
+/* Pièces bicolores : 1 € argent au centre / or autour ; 2 € or au centre / argent autour */
+.coin{display:flex;align-items:center;justify-content:center;gap:1px;height:min(100%,76px);aspect-ratio:1;border-radius:50%;color:#2a2003;
+  background:radial-gradient(circle,var(--c1) 0 55%,var(--c2) 56% 100%);box-shadow:inset 0 0 0 2px #0003,0 4px 10px -4px #000}
+.coin-1{--c1:#D9DDE2;--c2:#E2B93B} .coin-2{--c1:#E2B93B;--c2:#D9DDE2}
+.coin b{font-family:var(--display);font-weight:900;font-size:clamp(18px,5vw,26px);line-height:1}
+.coin small{font-weight:900;font-size:.8em}
+.calc-act.two{grid-template-columns:1fr 1.5fr}
+.calc-act .cta.done{background:var(--ok);color:#03210f}
+.calc-act .cta.done svg{width:24px;height:24px}
+/* Résultat */
+.chg-res{flex:none;display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 16px;border-radius:var(--r);
+  background:color-mix(in srgb,var(--ok) 12%,#05040f);border:2px solid color-mix(in srgb,var(--ok) 55%,var(--line))}
+.chg-res .lbl{font-family:var(--display);font-weight:700;font-size:20px;color:var(--ok)}
+.chg-res .big{font-family:var(--display);font-weight:900;font-size:clamp(56px,min(20vw,12vh),110px);line-height:1;color:var(--ok);
+  text-shadow:0 0 30px color-mix(in srgb,var(--ok) 40%,transparent)}
+.chg-res .sub{color:var(--muted);font-weight:700;font-size:14px}
+.chg-give{flex:1;min-height:0;display:grid;gap:10px}
+.gv{display:flex;align-items:center;justify-content:center;gap:18px;min-height:0;border-radius:18px;background:var(--panel);border:2px solid var(--line);padding:6px 14px}
+.gv .bill{max-width:130px;width:auto;height:min(100%,68px)}
+.gv .coin{height:min(100%,62px)}
+.gv .x{font-family:var(--display);font-weight:900;font-size:clamp(28px,min(9vw,6vh),44px);min-width:3ch}
+.gv.ok{color:var(--ok);font-family:var(--display);font-weight:900;font-size:22px;gap:10px}
+.gv.ok svg{width:40px;height:40px}
+/* Billets et pièces plus grands dans les cases */
+.mb .bill{width:auto;height:min(78%,96px);max-width:94%}
+.mb .bill b{font-size:clamp(22px,7vw,38px)}
+.mb .coin{height:auto;width:min(84%,86px)}
+.mb .coin b{font-size:clamp(20px,5.6vw,30px)}
+.gv .bill{height:min(100%,84px);max-width:170px}
+.gv .bill b{font-size:clamp(24px,7vw,38px)}
+.gv .coin{height:min(100%,72px)}
+
+/* Lancement : 4 boutons sur un écran, même sur petit téléphone */
+.lh{font-size:clamp(21px,6.2vw,26px)}
+.launch{grid-template-rows:repeat(4,minmax(0,1fr))}
+@media (max-height:780px){
+  .lh{margin:0 0 10px}
+  .launch{gap:10px}
+  .lt{padding:10px 14px 10px 16px;gap:12px;border-radius:22px}
+  .lti{width:52px;height:52px;border-radius:16px}
+  .ltt{font-size:clamp(17px,5vw,21px)}
+  .lts{display:none}
+  .ltb{margin-top:2px;padding:3px 9px;font-size:12.5px}
+}
+@media (max-height:600px){
+  .lti{width:44px;height:44px;border-radius:14px}
+  .ltt{font-size:16px}
+  .ltc{font-size:26px}
+}
+.calc-x{margin-left:auto}
+.mcoins .qty{top:3px;right:3px;min-width:24px;height:24px;font-size:13px}

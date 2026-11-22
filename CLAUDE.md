@@ -7,7 +7,7 @@ L'interface est en français par défaut, avec un choix de langue sur l'accueil 
 ## Mise en ligne
 
 **L'appli est en ligne** : https://chantrelloic-hash.github.io/cosmo/ (dépôt public, Pages source « GitHub Actions », déploiement automatique à chaque push sur `main`).
-Vérifié le 22 novembre 2026 après la PR #6 (`CACHE_VERSION` v7, puis v8 : page de lancement en ligne le 22 novembre) : accueil avec « Les plus vendus » et « Pour l'équipe », calculatrice (bouteilles 120 €, tout tient sans défiler), ouverture (9 cartes), aucune erreur console ni ressource en erreur.
+Vérifié le 22 novembre 2026 après la PR #6 (`CACHE_VERSION` v7, puis v8 lancement, v9 note partagée, en ligne le 22 novembre ; v10 : rendre la monnaie) : accueil avec « Les plus vendus » et « Pour l'équipe », calculatrice (bouteilles 120 €, tout tient sans défiler), ouverture (9 cartes), aucune erreur console ni ressource en erreur.
 Une fusion dans `main` met en ligne tout de suite l'appli utilisée en service. **Loïc veut que chaque changement soit mis en ligne sans lui redemander** : dès que les tests (locaux et CI) sont verts, fusionner, puis vérifier le site.
 Installation : iPhone, Safari → Partager → « Sur l'écran d'accueil » ; Android, Chrome → ⋮ → « Installer l'application ». Rappeler à Loïc de changer le code des réglages (appui long sur « COSMO », 1234 par défaut).
 
@@ -32,7 +32,7 @@ Installation : iPhone, Safari → Partager → « Sur l'écran d'accueil » ; An
 ```
 npm install
 npm run serve      # http://localhost:8080 (python3 -m http.server sur app/)
-npm test           # unitaires (109) + e2e Playwright (32), doit rester vert
+npm test           # unitaires (113) + e2e Playwright (33), doit rester vert
 ```
 
 En local, `playwright.config.js` utilise `/opt/pw-browsers/chromium` s'il existe (environnement cloud) ; sinon `npx playwright install chromium`.
@@ -49,9 +49,9 @@ En local, `playwright.config.js` utilise `/opt/pw-browsers/chromium` s'il existe
   Champagne Moët : nombre de flûtes, pas de softs.
 - « William » ne fait pas partie de la carte (c'était une erreur).
 
-## Lancement : 3 grands boutons
+## Lancement : 4 grands boutons
 
-- Au lancement (et à chaque rechargement), l'appli affiche la page **« Que veux-tu faire ? »** (vue `launch`) : **Prise de commande** (l'écran client ci-dessous ; une commande en cours s'y voit : articles · total), **Calculatrice**, **Ouverture du Cosmo** (avancement x / 9). Pas de barre du bas ni de bouton calculatrice dans l'en-tête sur cette page, qui tient sur un écran sans défiler.
+- Au lancement (et à chaque rechargement), l'appli affiche la page **« Que veux-tu faire ? »** (vue `launch`) : **Prise de commande** (l'écran client ci-dessous ; une commande en cours s'y voit : articles · total), **Calculatrice**, **Rendre la monnaie** (« À payer · total » si commande), **Ouverture du Cosmo** (avancement x / 9). Sur les écrans courts (< 780 px de haut), les sous-titres sont masqués pour que les 4 tiennent. Pas de barre du bas ni de bouton calculatrice dans l'en-tête sur cette page, qui tient sur un écran sans défiler.
 - La pile des écrans commence par `launch` ; `home()` ramène à l'écran client (`[launch, home]`), « Retour » depuis l'écran client ramène au lancement.
 
 ## Accueil client : les plus vendus et la commande en cours
@@ -67,6 +67,12 @@ En local, `playwright.config.js` utilise `/opt/pw-browsers/chromium` s'il existe
 - **Une seule note par client, partagée** : chaque prix tapé sur la calculatrice est une ligne de la commande en cours (clé `calc:<prix>`, libellé « Calculatrice », sous-titre le prix), avec − / + comme les boissons ; la calculatrice affiche le total de toute la commande et rappelle en haut les boissons et prix déjà pris. **Un seul bouton de remise à zéro, « Nouveau client »**, en haut de l'écran client (en-tête) et de la calculatrice : vide tout, sans confirmation (choix de Loïc). Plus de « Vider » ni « Effacer » ailleurs. « Annuler » de la calculatrice retire seulement le dernier prix tapé sur la calculatrice (`undoCalc`), jamais une boisson.
 - **Calculatrice** (plein écran, `#calc`) : une touche par tarif de la carte, calculée par `priceKeys` (`pricing.js`) depuis la carte + réglages, avec le rappel des produits à ce prix ; les 3 prix de bouteilles sont réunis sur une touche « Bouteilles » qui ouvre le choix 90 / 120 / 140 € (retour automatique aux touches après le choix, pas de bouton retour ; « Annuler » referme le choix sans rien retirer). Pas de saisie libre. **Tout tient sur un écran sans défiler** (touches en lignes `1fr`, resserrées par `fitCalc` si un texte déborde ; vérifié en e2e jusqu'à 320×568).
 - **Ouverture du Cosmo** : 9 étapes à cocher (volet après l'arrivée d'au moins 1 agent de sécurité, barrière, disjoncteurs à flèche rose, 2 boîtiers clim, 2 clims à la télécommande, écran des tarifs USB → « tarif » → pause, désodorisant + 2 WC, gobelets/pailles/bougies + réserve, pièces de caisse + SumUp en charge). Cases gardées sur le téléphone (`cosmo.opening.v1`) jusqu'à « Recommencer ».
+
+## Rendre la monnaie
+
+- Plein écran (`#change`, même cadre que la calculatrice), ouvert par le 4e bouton du lancement et par « Encaisser » (l'ancien écran `cash` est supprimé). **À payer = total de la commande partagée** (écran client + calculatrice).
+- On touche ce que le client donne : billets 5 / 10 / 20 / 50 / 100 € et pièces 1 / 2 € (dessinés en CSS aux couleurs réelles, nombre de chaque en pastille) ; « Annuler » retire le dernier ; état « Il manque x € » / « C'est bon ». « Valider » (actif seulement si reçu ≥ à payer) affiche **À rendre** en énorme et le détail en billets de **20 / 10 / 5** et pièces de **2 / 1** seulement (`changeBreakdown`, `pricing.js`). « Corriger » revient à la saisie ; **« Terminé » remet tout à zéro (comme « Nouveau client ») et revient au lancement.**
+- Tout tient sur un écran (vérifié en e2e et de 320×568 à 430×932).
 
 ## Conventions
 

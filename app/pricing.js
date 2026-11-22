@@ -74,6 +74,25 @@ export function changeDue(received, total) {
 }
 
 /**
+ * Comment rendre la monnaie : billets et pièces à donner, du plus gros au plus petit.
+ * Par défaut on ne rend qu'en billets de 20, 10, 5 € et en pièces de 2 et 1 €.
+ * @param {number} amount Montant à rendre (euros entiers ; 0 ou négatif : rien à rendre).
+ * @param {number[]} [denoms=[20, 10, 5, 2, 1]] Valeurs disponibles, du plus grand au plus petit.
+ * @returns {{value: number, qty: number}[]} Ex. 38 → [{20,1},{10,1},{5,1},{2,1},{1,1}].
+ */
+export function changeBreakdown(amount, denoms = [20, 10, 5, 2, 1]) {
+  const out = [];
+  let rest = Math.floor(Number(amount) || 0);
+  for (const v of denoms) {
+    if (rest < v) continue;
+    const qty = Math.floor(rest / v);
+    out.push({ value: v, qty });
+    rest -= qty * v;
+  }
+  return out;
+}
+
+/**
  * Lit un prix saisi à la main : entier de 0 à 999, rien d'autre.
  * @param {string|number} text Texte saisi (espaces autour tolérés).
  * @returns {number|null} L'entier, ou null si la saisie n'est pas valide (vide, virgule, négatif, lettres...).
