@@ -6,6 +6,7 @@ export const KEYS = {
   order: 'cosmo.order.v1',         // commande en cours
   code: 'cosmo.code.v1',           // code d'accès aux réglages (4 chiffres)
   prefs: 'cosmo.prefs.v1',         // préférences d'affichage {lefty}
+  opening: 'cosmo.opening.v1',     // pense-bête d'ouverture : id des étapes faites
 };
 
 /** @returns {*} valeur JSON stockée, ou `fallback` si absente / illisible / stockage indisponible. */

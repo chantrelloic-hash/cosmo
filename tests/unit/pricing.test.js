@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import {
   glassPrice, countSofts, extraSofts, bottlePrice, orderTotal, orderCount, changeDue,
   parsePrice, applyOverride, mergeOverride, sanitizeOverrides, removeOne, sanitizeOrder,
-  linePrice, addToOrder, removeFromOrder,
+  linePrice, addToOrder, removeFromOrder, priceKeys, tapeGroups,
 } from '../../app/pricing.js';
+import { readFileSync } from 'node:fs';
 
 describe('glassPrice', () => {
   test('verre sec 10 €, avec soft 15 €', () => {
@@ -314,4 +315,62 @@ describe('lignes de commande : quantités', () => {
     assert.equal(orderTotal(o), 97);
     assert.equal(orderCount(o), 9);
   });
+});
+
+describe('priceKeys (calculatrice)', () => {
+  const menu = JSON.parse(readFileSync(new URL('../../app/menu.json', import.meta.url), 'utf8'));
+  const keys = priceKeys({
+    beers: menu.beers, softs: menu.softs, spirits: menu.spirits,
+    bottles: menu.bottles, softSupplement: menu.softSupplement,
+  });
+  const at = p => keys.find(k => k.price === p);
+  const kinds = p => at(p).groups.map(g => g.kind);
+  const names = (p, kind) => at(p).groups.find(g => g.kind === kind).names;
+
+  test('un bouton par tarif de la carte officielle, du moins cher au plus cher', () => {
+    assert.deepEqual(keys.map(k => k.price), [3, 5, 7, 10, 12, 15, 20, 90, 120, 140]);
+  });
+  test('3 € : l’eau seulement', () => {
+    assert.deepEqual(kinds(3), ['soft']);
+    assert.deepEqual(names(3, 'soft'), ['Eau']);
+  });
+  test('5 € : Heineken, les softs et le supplément soft', () => {
+    assert.deepEqual(kinds(5), ['beer', 'soft', 'supplement']);
+    assert.deepEqual(names(5, 'beer'), ['Heineken']);
+    assert.equal(names(5, 'soft').length, 7);
+  });
+  test('7 € : les bières 33-35 cl, Desperados une seule fois', () => {
+    assert.deepEqual(names(7, 'beer'), ['Desperados', 'Guinness', 'Corona']);
+  });
+  test('10 € : verres d’alcool et Caïpi (servie seule)', () => {
+    assert.deepEqual(kinds(10), ['glass', 'neat']);
+    assert.ok(names(10, 'glass').includes('Red Label'), 'les enfants (whisky) comptent');
+    assert.deepEqual(names(10, 'neat'), ['Caïpi maracuja']);
+  });
+  test('12, 15, 20 € : Jack Daniel’s ; Hennessy et Black Label ; coupe de champagne', () => {
+    assert.deepEqual(names(12, 'glass'), ['Jack Daniel’s']);
+    assert.deepEqual(names(15, 'glass'), ['Black Label', 'Hennessy']);
+    assert.deepEqual(names(20, 'neat'), ['Coupe champagne']);
+  });
+  test('bouteilles : 90, 120 et 140 €', () => {
+    assert.equal(names(90, 'bottle').length, 10);
+    assert.deepEqual(names(120, 'bottle'), ['Champagne Moët', 'Jack Daniel’s']);
+    assert.deepEqual(names(140, 'bottle'), ['Cognac Hennessy', 'Whisky Black Label']);
+  });
+  test('un prix modifié dans les réglages crée sa propre touche ; sans supplément, pas de type « supplément »', () => {
+    const k = priceKeys({ beers: [{ name: 'Heineken', price: 6 }], softs: [{ name: 'Coca', price: 5 }], softSupplement: 0 });
+    assert.deepEqual(k.map(x => x.price), [5, 6]);
+    assert.deepEqual(k[0].groups.map(g => g.kind), ['soft']);
+  });
+  test('prix absents ou invalides ignorés', () => {
+    assert.deepEqual(priceKeys({ beers: [{ name: 'X' }, { name: 'Y', price: 0 }] }), []);
+    assert.deepEqual(priceKeys(), []);
+  });
+});
+
+describe('tapeGroups (ruban de la calculatrice)', () => {
+  test('regroupe par prix dans l’ordre du premier appui', () => {
+    assert.deepEqual(tapeGroups([10, 5, 10, 7]), [{ price: 10, qty: 2 }, { price: 5, qty: 1 }, { price: 7, qty: 1 }]);
+  });
+  test('ruban vide', () => assert.deepEqual(tapeGroups([]), []));
 });

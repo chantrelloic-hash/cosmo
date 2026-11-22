@@ -204,3 +204,59 @@ export function removeFromOrder(order, key, price, qty = 1) {
     .map(i => (hit(i) ? { ...i, qty: i.qty - qty } : i))
     .filter(i => i.qty > 0);
 }
+
+/**
+ * Touches de la calculatrice : un bouton par prix existant sur la carte, avec ce que ce prix représente.
+ * Les produits de même prix sont regroupés par type (bière, soft, verre d'alcool, verre servi seul,
+ * bouteille), sans doublon de nom ; le supplément soft devient un type à part sur sa touche.
+ * @param {object} carte Listes déjà filtrées (produits disponibles, prix des réglages appliqués).
+ * @param {{name: string, price: number}[]} [carte.beers]
+ * @param {{name: string, price: number}[]} [carte.softs]
+ * @param {{name: string, short?: string, price?: number, noSoft?: boolean, children?: object[]}[]} [carte.spirits]
+ *   Alcools au verre ; un alcool à `children` (Whisky, Get) compte pour chacun de ses enfants.
+ * @param {{price: number, items: {name: string}[]}[]} [carte.bottles] Bouteilles groupées par prix.
+ * @param {number} [carte.softSupplement] Supplément soft (0 ou absent : pas de touche dédiée).
+ * @returns {{price: number, groups: {kind: 'beer'|'soft'|'glass'|'neat'|'bottle'|'supplement', names: string[]}[]}[]}
+ *   Touches triées par prix croissant ; dans une touche, les types dans l'ordre ci-dessus.
+ */
+export function priceKeys({ beers = [], softs = [], spirits = [], bottles = [], softSupplement } = {}) {
+  const ORDER = ['beer', 'soft', 'glass', 'neat', 'bottle', 'supplement'];
+  const map = new Map();
+  const put = (price, kind, name) => {
+    if (!Number.isFinite(price) || price <= 0) return;
+    if (!map.has(price)) map.set(price, new Map());
+    const kinds = map.get(price);
+    if (!kinds.has(kind)) kinds.set(kind, []);
+    const names = kinds.get(kind);
+    if (name && !names.includes(name)) names.push(name);
+  };
+  for (const b of beers) put(b.price, 'beer', b.name);
+  for (const s of softs) put(s.price, 'soft', s.name);
+  for (const s of spirits) {
+    for (const x of s.children || [s]) put(x.price, (x.noSoft ?? s.noSoft) ? 'neat' : 'glass', x.short || x.name);
+  }
+  for (const t of bottles) for (const it of t.items || []) put(it.price ?? t.price, 'bottle', it.name);
+  if (softSupplement > 0) put(softSupplement, 'supplement', '');
+  return [...map]
+    .sort((a, b) => a[0] - b[0])
+    .map(([price, kinds]) => ({
+      price,
+      groups: [...kinds]
+        .sort((a, b) => ORDER.indexOf(a[0]) - ORDER.indexOf(b[0]))
+        .map(([kind, names]) => ({ kind, names })),
+    }));
+}
+
+/**
+ * Ruban de la calculatrice : les prix touchés, regroupés par prix dans l'ordre du premier appui.
+ * @param {number[]} tape Prix touchés, dans l'ordre.
+ * @returns {{price: number, qty: number}[]} Ex. [10, 5, 10] → [{price:10, qty:2}, {price:5, qty:1}].
+ */
+export function tapeGroups(tape) {
+  const out = [];
+  for (const p of tape) {
+    const hit = out.find(g => g.price === p);
+    if (hit) hit.qty += 1; else out.push({ price: p, qty: 1 });
+  }
+  return out;
+}
