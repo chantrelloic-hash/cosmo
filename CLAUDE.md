@@ -7,7 +7,7 @@ L'interface est en français par défaut, avec un choix de langue sur l'accueil 
 ## Mise en ligne
 
 **L'appli est en ligne** : https://chantrelloic-hash.github.io/cosmo/ (dépôt public, Pages source « GitHub Actions », déploiement automatique à chaque push sur `main`).
-Vérifié le 22 novembre 2026 après la PR #6 (`CACHE_VERSION` v7, puis v8 lancement, v9 note partagée, en ligne le 22 novembre ; v10 rendre la monnaie, v11 langue sur l'écran principal, v12 lancement qui remplit l'écran) : accueil avec « Les plus vendus » et « Pour l'équipe », calculatrice (bouteilles 120 €, tout tient sans défiler), ouverture (9 cartes), aucune erreur console ni ressource en erreur.
+Vérifié le 22 novembre 2026 après la PR #6 (`CACHE_VERSION` v7, puis v8 lancement, v9 note partagée, en ligne le 22 novembre ; v10 rendre la monnaie, v11 langue sur l'écran principal, v12 lancement qui remplit l'écran, v13 écrans uniformes) : accueil avec « Les plus vendus » et « Pour l'équipe », calculatrice (bouteilles 120 €, tout tient sans défiler), ouverture (9 cartes), aucune erreur console ni ressource en erreur.
 Une fusion dans `main` met en ligne tout de suite l'appli utilisée en service. **Loïc veut que chaque changement soit mis en ligne sans lui redemander** : dès que les tests (locaux et CI) sont verts, fusionner, puis vérifier le site.
 Installation : iPhone, Safari → Partager → « Sur l'écran d'accueil » ; Android, Chrome → ⋮ → « Installer l'application ». Rappeler à Loïc de changer le code des réglages (appui long sur « COSMO », 1234 par défaut).
 
@@ -56,7 +56,7 @@ En local, `playwright.config.js` utilise `/opt/pw-browsers/chromium` s'il existe
 
 ## Accueil client : les plus vendus et la commande en cours
 
-- L'accueil montre d'abord « Les plus vendus » (`favorites` dans `menu.json` : Heineken, Desperados, Desperados Rouge en 1 tap ; Rhum et Vodka : « avec quoi ? » puis quantité 1 à 6), puis « Toute la carte » (les 4 familles), puis la section **« Commande en cours »** (lignes avec − / +, total énorme, « Montrer au client », « Encaisser », « Vider »).
+- L'accueil montre d'abord « Les plus vendus » (`favorites` dans `menu.json` : Heineken, Desperados, Desperados Rouge en 1 tap ; Rhum et Vodka : « avec quoi ? » puis quantité 1 à 6), puis « Toute la carte » (les 4 familles), puis la section **« Commande en cours »** (lignes avec − / +, total énorme, « Montrer au client », « Encaisser » ; la remise à zéro est « Nouveau client », en haut).
 - Sur l'accueil la barre du bas est une petite barre (articles + total) qui défile vers « Commande en cours » et se masque quand cette section est visible ; sur les autres écrans, la barre détaillée ouvre l'écran Commande.
 - Marques servies au bar (photos du client) : vodka Eristoff, gin Bombay London Dry, tequila Camino Real, rhum Saint James Royal Blanc (d'autres rhums au bar, mais pas de choix de marque dans l'appli), Hennessy VS, Get 27 / 31, Baileys, Jägermeister. Ne pas ajouter de produit hors carte officielle (Malibu, Martini, Campari, Ricard...).
 - Le service worker précache toutes les images référencées par `menu.json` (cache `cosmo-images`, non vidé par `CACHE_VERSION` : pour remplacer une photo, lui donner un nouveau nom de fichier).
@@ -73,6 +73,13 @@ En local, `playwright.config.js` utilise `/opt/pw-browsers/chromium` s'il existe
 - Plein écran (`#change`, même cadre que la calculatrice), ouvert par le 4e bouton du lancement et par « Encaisser » (l'ancien écran `cash` est supprimé). **À payer = total de la commande partagée** (écran client + calculatrice).
 - On touche ce que le client donne : billets 5 / 10 / 20 / 50 / 100 € et pièces 1 / 2 € (dessinés en CSS aux couleurs réelles, nombre de chaque en pastille) ; « Annuler » retire le dernier ; état « Il manque x € » / « C'est bon ». « Valider » (actif seulement si reçu ≥ à payer) affiche **À rendre** en énorme et le détail en billets de **20 / 10 / 5** et pièces de **2 / 1** seulement (`changeBreakdown`, `pricing.js`). « Corriger » revient à la saisie ; **« Terminé » remet tout à zéro (comme « Nouveau client ») et revient au lancement.**
 - Tout tient sur un écran (vérifié en e2e et de 320×568 à 430×932).
+
+## Écrans uniformes
+
+- **Même en-tête sur tous les écrans**, plein écran compris (`overlayTop` pour la calculatrice et la monnaie) : flèche ← ronde à gauche (libellé traduit `back`), logo COSMO, actions à droite (« Nouveau client », bouton calculatrice, « Accueil » traduit `homeBtn`). Plus de bouton texte « Fermer ».
+- **Même titre** : un `h1` en tête de chaque écran (classe `oh` dans les plein écran), puis une ligne d'aide `.hint`.
+- **Mêmes lignes de commande** (`rowsHTML`) dans « Commande en cours » et sur l'écran Commande (qui affiche `curOrderHTML(true)`, textes traduits).
+- **Petits boutons secondaires** : un seul style `.sbtn` / `.reset` (46 px, coins 16 px) ; ne pas confondre avec `.pill`, l'étiquette de prix des cartes produits.
 
 ## Conventions
 

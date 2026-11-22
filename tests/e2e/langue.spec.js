@@ -23,7 +23,7 @@ test('portugais du Brésil : accueil, commande d’une bière, total pour le cli
   await view(page).getByRole('button', { name: /^Cerveja/ }).click();
   await view(page).getByRole('button', { name: /Heineken/ }).click();
   await expect(page.locator('#toast .undo')).toHaveText('Desfazer');
-  await back(page).click();
+  await page.getByRole('button', { name: 'Voltar' }).click(); // le bouton retour est traduit
 
   await expect(page.locator('#cur-order')).toContainText('Pedido em andamento');
   await page.locator('#cur-order').getByRole('button', { name: 'Mostrar ao cliente' }).click();
