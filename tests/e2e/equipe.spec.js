@@ -276,3 +276,31 @@ test('rendre la monnaie : 4e bouton, lié à la commande et à la calculatrice ;
   await page.locator('#view .lt-calc').click();
   await expect(calc.locator('.calc-total')).toHaveText(euro(0));
 });
+
+test('écran principal : choix de la langue en haut, en petit', async ({ page }) => {
+  await page.goto('/');
+  const langs = page.getByRole('group', { name: 'Langue' });
+  await expect(langs.getByRole('button')).toHaveCount(3);
+  await expect(langs.getByRole('button', { name: 'Français' })).toHaveAttribute('aria-pressed', 'true');
+  /* en haut et petit : dans l'en-tête, moins haut que les grands boutons */
+  const box = await langs.boundingBox();
+  expect(box.y).toBeLessThan(80);
+  expect(box.height).toBeLessThan(50);
+  await langs.getByRole('button', { name: 'Português (Brasil)' }).click();
+  await expect(page.getByRole('heading', { name: 'O que você quer fazer?' })).toBeVisible();
+  await expect(page.locator('#view .lt-order')).toContainText('Anotar pedido');
+  await expect(page.getByRole('group', { name: 'Idioma' }).getByRole('button', { name: 'Português (Brasil)' })).toHaveAttribute('aria-pressed', 'true');
+  /* la langue suit sur l'écran client, et pas de choix de langue dans l'en-tête ailleurs */
+  await page.locator('#view .lt-order').click();
+  await expect(page.getByRole('heading', { name: 'O que você vai beber?' })).toBeVisible();
+  await expect(page.locator('#hlangs')).toBeHidden();
+  await page.getByRole('button', { name: 'Retour' }).click();
+  await page.getByRole('group', { name: 'Idioma' }).getByRole('button', { name: 'English' }).click();
+  await expect(page.getByRole('heading', { name: 'What do you want to do?' })).toBeVisible();
+  /* tient sur l'écran, même sur un très petit téléphone */
+  for (const [w, h] of [[390, 844], [320, 568]]) {
+    await page.setViewportSize({ width: w, height: h });
+    await noHorizontalScroll(page);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(h);
+  }
+});

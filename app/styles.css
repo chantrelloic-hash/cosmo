@@ -622,3 +622,14 @@ html.calc-open,html.calc-open body{overflow:hidden}
 }
 .calc-x{margin-left:auto}
 .mcoins .qty{top:3px;right:3px;min-width:24px;height:24px;font-size:13px}
+
+/* Choix de la langue sur l'écran principal : 3 petits drapeaux dans l'en-tête */
+.hlangs{display:flex;gap:6px}
+.hlangs[hidden]{display:none}
+.hlang{display:flex;align-items:center;gap:5px;min-height:40px;padding:0 8px;border-radius:12px;border:2px solid var(--line);background:var(--panel);
+  color:var(--muted);font-weight:800;font-size:12.5px;letter-spacing:.04em}
+.hlang svg{width:24px;height:16px;border-radius:3px;box-shadow:0 0 0 1px #fff3}
+.hlang[aria-pressed="true"]{border-color:var(--flame);color:var(--ink);background:var(--panel-2)}
+.hlang:active{transform:scale(.95)}
+@media (max-width:389px){ .hlang span{display:none} .hlang{padding:0 7px} }
+@media (max-width:430px){ .top:has(.hlangs:not([hidden])) .mark small{display:none} }
