@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   glassPrice, countSofts, extraSofts, bottlePrice, orderTotal, orderCount, changeDue,
   parsePrice, applyOverride, mergeOverride, sanitizeOverrides, removeOne, sanitizeOrder,
-  linePrice, addToOrder, removeFromOrder, priceKeys, tapeGroups,
+  linePrice, addToOrder, removeFromOrder, priceKeys, undoCalc,
 } from '../../app/pricing.js';
 import { readFileSync } from 'node:fs';
 
@@ -368,9 +368,25 @@ describe('priceKeys (calculatrice)', () => {
   });
 });
 
-describe('tapeGroups (ruban de la calculatrice)', () => {
-  test('regroupe par prix dans l’ordre du premier appui', () => {
-    assert.deepEqual(tapeGroups([10, 5, 10, 7]), [{ price: 10, qty: 2 }, { price: 5, qty: 1 }, { price: 7, qty: 1 }]);
+describe('undoCalc (Annuler de la calculatrice)', () => {
+  const heineken = { key: 'biere:heineken', label: 'Heineken', price: 5, qty: 2 };
+  const c15 = { key: 'calc:15', label: 'Calculatrice', price: 15, qty: 2 };
+  const c10 = { key: 'calc:10', label: 'Calculatrice', price: 10, qty: 1 };
+  test('retire le dernier prix tapé, jamais une boisson', () => {
+    const r = undoCalc([heineken, c15, c10], [15, 10, 15]);
+    assert.deepEqual(r.order, [heineken, { ...c15, qty: 1 }, c10]);
+    assert.deepEqual(r.history, [15, 10]);
   });
-  test('ruban vide', () => assert.deepEqual(tapeGroups([]), []));
+  test('saute les prix déjà retirés avec « − »', () => {
+    const r = undoCalc([heineken, c15], [15, 10]);
+    assert.deepEqual(r.order, [heineken, { ...c15, qty: 1 }]);
+    assert.deepEqual(r.history, []);
+  });
+  test('historique vide : la dernière ligne calculatrice ; sans ligne calculatrice : rien', () => {
+    assert.deepEqual(undoCalc([c10, heineken, c15], []).order, [c10, heineken, { ...c15, qty: 1 }]);
+    assert.deepEqual(undoCalc([heineken], [5]).order, [heineken]);
+  });
+  test('la ligne disparaît à 0', () => {
+    assert.deepEqual(undoCalc([heineken, c10], [10]).order, [heineken]);
+  });
 });
