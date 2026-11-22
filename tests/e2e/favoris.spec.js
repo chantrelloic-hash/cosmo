@@ -81,7 +81,7 @@ test('les plus vendus : commande complète depuis l’accueil, total 97 € en b
   await expect(cur(page).locator('.total b')).toHaveText(euro(97));
   await expect(cur(page).getByRole('button', { name: 'Montrer au client' })).toBeVisible();
   await expect(cur(page).getByRole('button', { name: 'Encaisser' })).toBeVisible();
-  await expect(cur(page).getByRole('button', { name: 'Vider' })).toBeVisible();
+  await expect(cur(page).getByRole('button', { name: 'Vider' })).toHaveCount(0); // un seul bouton : « Nouveau client », en haut
   await expect(bar(page).locator('.tt')).toHaveText(euro(97));
   await expect(bar(page)).toContainText('9 articles');
   await noHorizontalScroll(page);
@@ -96,8 +96,8 @@ test('les plus vendus : commande complète depuis l’accueil, total 97 € en b
   await back(page).click();
   await expect(cur(page).locator('.total b')).toHaveText(euro(97));
 
-  // Vider
-  await cur(page).getByRole('button', { name: 'Vider' }).click();
+  // Nouveau client (en haut) : vide tout
+  await page.getByRole('button', { name: 'Nouveau client' }).click();
   await expect(cur(page)).toContainText('Aucune boisson pour l’instant');
   await expect(cur(page).locator('.total b')).toHaveText(euro(0));
 
@@ -269,7 +269,7 @@ test('portugais : les nouveaux libellés sont traduits', async ({ page }) => {
   await expect(cur(page)).toContainText('+ Coca-Cola');
   await expect(cur(page).getByRole('button', { name: 'Mostrar ao cliente' })).toBeVisible();
   await expect(cur(page).getByRole('button', { name: 'Receber' })).toBeVisible();
-  await expect(cur(page).getByRole('button', { name: 'Limpar' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Novo cliente' })).toBeVisible();
   await expect(bar(page)).toContainText('3 itens');
 });
 
@@ -295,7 +295,7 @@ test('anglais : les nouveaux libellés sont traduits', async ({ page }) => {
   await expect(cur(page).locator('.total b')).toHaveText(euro(40));
   await expect(cur(page).getByRole('button', { name: 'Show to customer' })).toBeVisible();
   await expect(cur(page).getByRole('button', { name: 'Cash in' })).toBeVisible();
-  await expect(cur(page).getByRole('button', { name: 'Clear' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'New customer' })).toBeVisible();
   await expect(bar(page)).toContainText('4 items');
 });
 
@@ -303,9 +303,8 @@ test('les photos des produits s’affichent (tuiles favoris et cartes de bières
   await openHome(page);
   const loaded = sel => page.locator(sel).evaluateAll(imgs => imgs.map(i => i.complete && i.naturalWidth > 0));
   await expect.poll(async () => (await loaded('.fav img')).every(Boolean) && (await loaded('.fav img')).length === 3).toBe(true);
-  await expect.poll(async () => (await loaded('.favs img')).length).toBe(2);
-  expect((await loaded('.favs img')).every(Boolean)).toBe(true);
+  /* on attend que les images soient chargées, pas seulement présentes (sinon échec au hasard sous charge) */
+  await expect.poll(async () => { const l = await loaded('.favs img'); return l.length === 2 && l.every(Boolean); }).toBe(true);
   await view(page).getByRole('button', { name: /^Soft/ }).click();
-  await expect.poll(async () => (await loaded('.brand img')).length).toBe(2); // Coca-Cola, Red Bull
-  expect((await loaded('.brand img')).every(Boolean)).toBe(true);
+  await expect.poll(async () => { const l = await loaded('.brand img'); return l.length === 2 && l.every(Boolean); }).toBe(true); // Coca-Cola, Red Bull
 });

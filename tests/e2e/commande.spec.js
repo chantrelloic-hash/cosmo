@@ -30,12 +30,14 @@ test('la commande survit à un rechargement', async ({ page }) => {
   await expect(page.locator('.row').filter({ hasText: 'Corona' }).locator('output')).toHaveText('2');
 });
 
-test('vider la commande efface aussi la sauvegarde', async ({ page }) => {
+test('« Nouveau client » vide la commande et sa sauvegarde', async ({ page }) => {
   await openHome(page);
   await page.locator('#view').getByRole('button', { name: /^Bière/ }).click();
   await page.locator('#view').getByRole('button', { name: /Heineken/ }).click();
-  await bar(page).click();
-  await page.locator('#view').getByRole('button', { name: 'Vider la commande' }).click();
+  await page.getByRole('button', { name: 'Retour' }).click();
+  await expect(page.locator('#cur-order .row')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Nouveau client' }).click();
+  await expect(page.locator('#cur-order .row')).toHaveCount(0);
   await page.reload();
   await enterOrder(page);
   await expect(bar(page)).toContainText('Commande vide');

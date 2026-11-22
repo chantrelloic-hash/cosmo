@@ -248,15 +248,23 @@ export function priceKeys({ beers = [], softs = [], spirits = [], bottles = [], 
 }
 
 /**
- * Ruban de la calculatrice : les prix touchés, regroupés par prix dans l'ordre du premier appui.
- * @param {number[]} tape Prix touchés, dans l'ordre.
- * @returns {{price: number, qty: number}[]} Ex. [10, 5, 10] → [{price:10, qty:2}, {price:5, qty:1}].
+ * « Annuler » de la calculatrice : retire 1 exemplaire du dernier prix tapé sur la calculatrice,
+ * sans jamais toucher aux boissons choisies sur l'écran client. Les prix de la calculatrice sont des
+ * lignes de commande de clé `prefix + prix`. On remonte l'historique des appuis en sautant les prix
+ * déjà retirés (bouton « − ») ; historique vide (appli relancée) : la dernière ligne calculatrice.
+ * @param {{key: string, price: number, qty: number}[]} order Lignes de commande (non modifiées).
+ * @param {number[]} history Prix tapés, dans l'ordre (non modifié).
+ * @param {string} [prefix='calc:'] Début des clés des lignes de la calculatrice.
+ * @returns {{order: object[], history: number[]}} Nouvelle commande et historique restant.
  */
-export function tapeGroups(tape) {
-  const out = [];
-  for (const p of tape) {
-    const hit = out.find(g => g.price === p);
-    if (hit) hit.qty += 1; else out.push({ price: p, qty: 1 });
+export function undoCalc(order, history, prefix = 'calc:') {
+  const hist = [...history];
+  while (hist.length) {
+    const p = hist.pop();
+    if (order.some(i => i.key === prefix + p && i.price === p && i.qty > 0)) {
+      return { order: removeFromOrder(order, prefix + p, p, 1), history: hist };
+    }
   }
-  return out;
+  const last = [...order].reverse().find(i => i.key.startsWith(prefix));
+  return { order: last ? removeFromOrder(order, last.key, last.price, 1) : order, history: hist };
 }

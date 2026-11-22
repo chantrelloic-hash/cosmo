@@ -1,7 +1,7 @@
 import {
   glassPrice, countSofts, extraSofts, bottlePrice, orderTotal, orderCount, changeDue,
   parsePrice, applyOverride, mergeOverride, sanitizeOverrides, removeFromOrder, sanitizeOrder,
-  linePrice, addToOrder, priceKeys, tapeGroups,
+  linePrice, addToOrder, priceKeys, undoCalc,
 } from './pricing.js';
 import { OPEN_STEPS } from './ouverture.js';
 import { KEYS, read, write, remove } from './store.js';
@@ -300,7 +300,6 @@ const V = {
       <div class="actions">
         <button class="cta" ${on(showCustomer)}>Montrer au client</button>
         <button class="cta ghost" ${on(()=>{state.received=0; go('cash');})}>Encaisser · rendu monnaie</button>
-        <button class="cta danger" ${on(()=>{state.order=[]; lastAdd=null; home();})}>Vider la commande</button>
       </div>`;
   },
   opening(){
@@ -386,8 +385,7 @@ function curOrderHTML(){
     <div class="total"><span>${T('total')}</span><b class="price-num">${eur(total())}</b></div>
     <div class="actions"${state.order.length?'':' hidden'}>
       <button class="cta" ${on(showCustomer)}>${T('showClient')}</button>
-      <div class="duo"><button class="cta ghost" ${on(()=>{state.received=0; go('cash');})}>${T('cashIn')}</button>
-      <button class="cta danger" ${on(()=>{state.order=[]; lastAdd=null; hideToast(); render(false);})}>${T('clearAll')}</button></div>
+      <button class="cta ghost" ${on(()=>{state.received=0; go('cash');})}>${T('cashIn')}</button>
     </div></section>`;
 }
 
@@ -426,6 +424,7 @@ function pickSpirit(s){
 /* ============ POUR L'ÉQUIPE : pense-bête d'ouverture et calculatrice ============ */
 const CHECK = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const CALC_ICON = document.getElementById('calcBtn').innerHTML;
+const NEW_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.3-5.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M4 3.5v4.6h4.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const OPEN_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="19" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 3.5h6v3H9z" fill="currentColor"/><path d="M7.5 12l2 2 3.5-3.5M7.5 17.5l2 2 3.5-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 /** Étapes d'ouverture cochées (ids connus seulement). */
@@ -436,9 +435,19 @@ function openDone(){
 function saveOpen(list){ if(list.length) write(KEYS.opening, list); else remove(KEYS.opening); }
 
 /* Calculatrice plein écran : uniquement les tarifs de la carte (prix des réglages compris),
-   chaque touche rappelle ce qu'elle représente. Le ruban reste en mémoire jusqu'à « Effacer ». */
+   chaque touche rappelle ce qu'elle représente. Elle partage la commande du client : chaque prix tapé
+   est une ligne « Calculatrice » (clé calc:<prix>) de la commande en cours, et son total est celui
+   de toute la commande. « Nouveau client » (ici et sur l'écran client) vide tout. */
 const calcEl = document.getElementById('calc');
-let calcTape = [], calcFs = false;
+let calcHist = [], calcFs = false; // prix tapés (pour « Annuler »)
+const calcItem = p => ({key:`calc:${p}`, label:T('calcTitle'), sub:`${p}\u00a0€`, price:p});
+const hasCalc = () => state.order.some(i=>i.key.startsWith('calc:'));
+/** Nouveau client : vide la commande (boissons et prix de la calculatrice). */
+function newClient(){
+  state.order=[]; state.received=0; lastAdd=null; calcHist=[];
+  hideToast(); render(false);
+  if(!calcEl.hidden) drawCalc(true);
+}
 const KIND = {beer:'--beer', soft:'--soft', glass:'--spirit', neat:'--flame', bottle:'--bottle', supplement:'--soft'};
 /* Touches : un prix par touche, sauf les bouteilles, regroupées sur une seule touche qui ouvre le choix du prix. */
 function calcKeys(){
@@ -458,7 +467,10 @@ function keyLine(g){
 }
 let calcView = 'keys'; // 'keys' ou 'bottles' (choix du prix de la bouteille)
 function drawCalc(bump){
-  const groups=tapeGroups(calcTape), sum=calcTape.reduce((a,b)=>a+b,0);
+  /* rappel de la note du client : boissons choisies et prix tapés */
+  const tape=state.order.map(i=>i.key.startsWith('calc:')
+    ? `<span class="price-num">${eur(i.price)}${i.qty>1?` <b>×${i.qty}</b>`:''}</span>`
+    : `<span class="dr"><b class="price-num">${i.qty}×</b> ${esc(i.label)}</span>`);
   let pad;
   if(calcView==='bottles'){
     const bk=calcBottleKeys();
@@ -478,24 +490,25 @@ function drawCalc(bump){
         <span class="ckl"><span class="kl" style="--c:var(--bottle)"><i></i><span class="price-num">${bprices.map(p=>`<b>${p}</b>`).join(' · ')} €</span></span></span></button>`:''}</div>`;
   }
   calcEl.innerHTML = `<div class="calc-in">
-    <div class="calc-top"><h1 id="calcH">${T('calcTitle')}</h1><button class="calc-x" data-c="close">${T('calcClose')}</button></div>
+    <div class="calc-top"><h1 id="calcH">${T('calcTitle')}</h1>
+      <button class="newc" data-c="new" ${state.order.length?'':'disabled'}>${NEW_ICON}<span>${T('newClient')}</span></button>
+      <button class="calc-x" data-c="close">${T('calcClose')}</button></div>
     <div class="calc-screen">
-      <div class="calc-tape">${groups.length ? groups.map(g=>`<span class="price-num">${eur(g.price)}${g.qty>1?` <b>×${g.qty}</b>`:''}</span>`).join('<i>+</i>') : `<span class="none">${T('calcHint')}</span>`}</div>
-      <output class="calc-total price-num${bump?' bump':''}" aria-live="polite">${eur(sum)}</output>
+      <div class="calc-tape">${tape.length ? tape.join('<i>+</i>') : `<span class="none">${T('calcHint')}</span>`}</div>
+      <output class="calc-total price-num${bump?' bump':''}" aria-live="polite">${eur(total())}</output>
     </div>
     ${pad}
     <div class="calc-act">
       ${calcView==='bottles'
         ? `<button class="cta ghost" data-c="keys">← ${T('undo')}</button>`
-        : `<button class="cta ghost" data-c="undo" ${calcTape.length?'':'disabled'}>← ${T('undo')}</button>`}
-      <button class="cta danger" data-c="clear" ${calcTape.length?'':'disabled'}>${T('clear')}</button>
+        : `<button class="cta ghost" data-c="undo" ${hasCalc()?'':'disabled'}>← ${T('undo')}</button>`}
     </div></div>`;  fitCalc();
 }
 /** Si le texte d'une touche dépasse (petit écran, langue plus longue), resserre l'affichage d'un ou deux crans. */
 function fitCalc(){
   const pad=calcEl.querySelector('.calc-keys'); if(!pad) return;
   const over=()=>[...pad.querySelectorAll('.ck')].some(k=>k.scrollHeight>k.clientHeight+1);
-  for(const c of ['fit1','fit2']){ if(!over()) return; pad.classList.add(c); }
+  for(const c of ['fit1','fit2','fit3']){ if(!over()) return; pad.classList.add(c); }
 }
 function openCalc(){
   if(!RAW) return;
@@ -520,13 +533,19 @@ calcEl.addEventListener('click',e=>{
   const a=b.dataset.c;
   if(a==='close') return closeCalc();
   if(a==='bottles'||a==='keys'){ calcView=a; return drawCalc(false); }
-  if(a==='add'){ calcTape.push(+b.dataset.p); calcView='keys'; try{ if(navigator.vibrate) navigator.vibrate(12); }catch(_){} }
-  if(a==='undo') calcTape.pop();
-  if(a==='clear') calcTape=[];
-  drawCalc(a==='add');
+  if(a==='new') return newClient();
+  if(a==='add'){
+    const p=+b.dataset.p;
+    state.order=addToOrder(state.order, calcItem(p), 1); calcHist.push(p); calcView='keys';
+    try{ if(navigator.vibrate) navigator.vibrate(12); }catch(_){}
+  }
+  if(a==='undo'){ const r=undoCalc(state.order, calcHist); state.order=r.order; calcHist=r.history; }
+  render(false); /* écran dessous et sauvegarde de la commande */
+  drawCalc(a==='add'||a==='undo');
 });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !calcEl.hidden) closeCalc(); });
 document.getElementById('calcBtn').onclick=openCalc;
+document.getElementById('newBtn').onclick=newClient;
 
 function showCustomer(){
   const el=document.getElementById('show');
@@ -555,6 +574,10 @@ function render(scroll){
   document.getElementById('calcBtn').setAttribute('aria-label', T('calcTitle'));
   document.getElementById('calcBtn').hidden = top.v==='launch';
   document.body.classList.toggle('is-launch', top.v==='launch');
+  const nb=document.getElementById('newBtn');
+  nb.hidden = !isHome;
+  nb.disabled = !state.order.length;
+  nb.innerHTML = `${NEW_ICON}<span>${T('newClient')}</span>`;
   wrap.classList.toggle('mini', isHome);
   watchOrderSection(isHome);
   if(scroll) window.scrollTo(0,0);

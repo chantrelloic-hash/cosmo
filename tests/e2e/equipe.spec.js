@@ -2,7 +2,7 @@ import { test, expect, openHome, euro, noHorizontalScroll, enterOrder } from './
 
 /* Pour l'équipe : calculatrice des tarifs (plein écran) et pense-bête d'ouverture. */
 
-test('calculatrice : uniquement les tarifs de la carte, avec leur rappel, bouteilles regroupées ; additionne, corrige, efface', async ({ page }) => {
+test('calculatrice : uniquement les tarifs de la carte, avec leur rappel, bouteilles regroupées ; additionne, annule, nouveau client', async ({ page }) => {
   await openHome(page);
   await page.getByRole('button', { name: 'Calculatrice' }).first().click();
   const calc = page.getByRole('dialog', { name: 'Calculatrice' });
@@ -39,8 +39,9 @@ test('calculatrice : uniquement les tarifs de la carte, avec leur rappel, boutei
   await expect(calc.locator('.calc-tape')).toContainText('×2');
   await calc.getByRole('button', { name: /Annuler/ }).click();
   await expect(total).toHaveText(euro(25));
-  await calc.getByRole('button', { name: 'Effacer' }).click();
+  await calc.getByRole('button', { name: 'Nouveau client' }).click();
   await expect(total).toHaveText(euro(0));
+  await expect(calc.getByRole('button', { name: /Annuler/ })).toBeDisabled();
 
   /* plein écran : la calculatrice couvre tout l'écran */
   const box = await calc.boundingBox();
@@ -110,8 +111,9 @@ for (const [w, h, lang] of [[390, 844, 'fr'], [375, 667, 'pt'], [320, 568, 'en']
     await expect(page.locator('#calc .ck').first()).toBeVisible();
     const fits = () => page.evaluate(() => {
       const bad = [];
-      document.querySelectorAll('#calc .calc-in > *, #calc .ck').forEach(e => {
+      document.querySelectorAll('#calc .calc-in > *, #calc .calc-top > *, #calc .ck').forEach(e => {
         const r = e.getBoundingClientRect();
+        if (r.width <= 1) return; // titre masqué à l'écran sur très petit téléphone (lu par les lecteurs d'écran)
         if (r.bottom > innerHeight + 0.5 || r.right > innerWidth + 0.5) bad.push(`dépasse : ${e.className}`);
         if (e.scrollHeight > e.clientHeight + 1) bad.push(`texte coupé : ${e.className} ${e.dataset.p || ''}`);
       });
@@ -157,4 +159,64 @@ test('lancement : 3 grands boutons qui mènent à la commande, à la calculatric
   await expect(page.getByRole('heading', { name: 'Ouverture du Cosmo' })).toBeVisible();
   await page.getByRole('button', { name: 'Retour' }).click();
   await expect(tiles).toHaveCount(3);
+});
+
+test('calculatrice et écran client partagent la même commande ; « Nouveau client » remet tout à zéro', async ({ page }) => {
+  await openHome(page);
+  const cur = page.locator('#cur-order');
+  const calc = page.getByRole('dialog', { name: 'Calculatrice' });
+  const total = calc.locator('.calc-total');
+
+  /* le client choisit 2 Heineken (10 €) */
+  await page.locator('#view .fav').filter({ hasText: 'Heineken' }).click();
+  await page.locator('#view .fav').filter({ hasText: 'Heineken' }).click();
+
+  /* calculatrice : elle part du total du client et le rappelle en haut */
+  await page.locator('#calcBtn').click();
+  await expect(total).toHaveText(euro(10));
+  await expect(calc.locator('.calc-tape')).toContainText('2× Heineken');
+  await calc.getByRole('button', { name: '15 €', exact: true }).click();
+  await calc.getByRole('button', { name: '15 €', exact: true }).click();
+  await calc.getByRole('button', { name: '7 €', exact: true }).click();
+  await expect(total).toHaveText(euro(47));
+
+  /* « Annuler » retire le dernier prix de la calculatrice, jamais une boisson */
+  await calc.getByRole('button', { name: /Annuler/ }).click();
+  await calc.getByRole('button', { name: /Annuler/ }).click();
+  await calc.getByRole('button', { name: /Annuler/ }).click();
+  await expect(total).toHaveText(euro(10));
+  await expect(calc.getByRole('button', { name: /Annuler/ })).toBeDisabled();
+  await calc.getByRole('button', { name: '15 €', exact: true }).click();
+  await calc.getByRole('button', { name: '15 €', exact: true }).click();
+  await calc.getByRole('button', { name: 'Fermer' }).click();
+
+  /* écran client : une ligne par prix de la calculatrice, avec − / + */
+  await expect(cur.locator('.total b')).toHaveText(euro(40));
+  const line = cur.locator('.row').filter({ hasText: 'Calculatrice' });
+  await expect(line).toHaveCount(1);
+  await expect(line).toContainText('2 ×');
+  await expect(line).toContainText('15 €');
+  await line.getByRole('button', { name: 'Ajouter un' }).click();
+  await expect(cur.locator('.total b')).toHaveText(euro(55));
+  await page.locator('#view .fav').filter({ hasText: 'Heineken' }).click();
+  await expect(cur.locator('.total b')).toHaveText(euro(60));
+
+  /* retour à la calculatrice : tout est là ; on garde tout après un rechargement */
+  await page.locator('#calcBtn').click();
+  await expect(total).toHaveText(euro(60));
+  await page.reload();
+  await enterOrder(page);
+  await expect(cur.locator('.total b')).toHaveText(euro(60));
+  await page.locator('#calcBtn').click();
+  await expect(total).toHaveText(euro(60));
+  await calc.getByRole('button', { name: /Annuler/ }).click(); // historique perdu : la dernière ligne calculatrice
+  await expect(total).toHaveText(euro(45));
+
+  /* un seul bouton de remise à zéro : tout repart à 0, des deux côtés */
+  await calc.getByRole('button', { name: 'Nouveau client' }).click();
+  await expect(total).toHaveText(euro(0));
+  await expect(calc.locator('.calc-tape')).toContainText('Touche les prix');
+  await calc.getByRole('button', { name: 'Fermer' }).click();
+  await expect(cur.locator('.total b')).toHaveText(euro(0));
+  await expect(page.getByRole('button', { name: 'Nouveau client' })).toBeDisabled();
 });
