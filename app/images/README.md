@@ -14,4 +14,4 @@ Sans photo, la carte garde son picto d'origine.
 
 - Fonctionne pour les bières, softs, alcools au verre et bouteilles.
 - Si le fichier est absent ou illisible, la carte retombe silencieusement sur le picto.
-- Les photos sont mises en cache par le service worker à la première utilisation : elles marchent ensuite hors ligne. Ce cache n'est pas vidé par `CACHE_VERSION` : pour remplacer une photo, lui donner un nouveau nom de fichier (ex. `heineken-2.webp`) et mettre à jour `image` dans `menu.json`.
+- Les photos référencées par `menu.json` sont mises en cache par le service worker dès l'installation de l'appli (une photo ajoutée plus tard : à sa première utilisation) ; elles marchent ensuite hors ligne. Ce cache n'est pas vidé par `CACHE_VERSION` : pour remplacer une photo, lui donner un nouveau nom de fichier (ex. `heineken-2.webp`) et mettre à jour `image` dans `menu.json`.
