@@ -645,6 +645,7 @@ function render(scroll){
   document.getElementById('calcBtn').setAttribute('aria-label', T('calcTitle'));
   document.getElementById('calcBtn').hidden = top.v==='launch';
   document.body.classList.toggle('is-launch', top.v==='launch');
+  if(top.v==='launch') fitLaunch();
   const nb=document.getElementById('newBtn');
   nb.hidden = !isHome;
   nb.disabled = !state.order.length;
@@ -659,6 +660,19 @@ function render(scroll){
   if(scroll) window.scrollTo(0,0);
   saveOrder();
 }
+/** Page de lancement : si le texte d'un bouton déborde (langue plus longue, petit écran),
+    masque les sous-titres puis resserre les boutons, pour que tout tienne sans défiler. */
+function fitLaunch(){
+  const L=document.querySelector('#view .launch'); if(!L) return;
+  L.classList.remove('tight','tighter');
+  for(const c of ['tight','tighter']){
+    const over=[...L.children].some(t=>{ const x=t.querySelector('.ltx'); return x && x.getBoundingClientRect().bottom>t.getBoundingClientRect().bottom-2; });
+    if(!over && document.documentElement.scrollHeight<=window.innerHeight) return;
+    L.classList.add(c);
+  }
+}
+window.addEventListener('resize',fitLaunch);
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitLaunch);
 /** Commande en cours sauvegardée à chaque changement (vidée quand elle est vide). */
 function saveOrder(){ if(state.order.length) write(KEYS.order, state.order); else remove(KEYS.order); }
 /* Photo qui ne charge pas : retour silencieux au picto */
