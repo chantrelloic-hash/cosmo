@@ -1,4 +1,4 @@
-import { test, expect, euro, openHome, bar, back } from './fixtures.js';
+import { test, expect, euro, openHome, bar, back, enterOrder } from './fixtures.js';
 
 test('parcours complet : commande de 237 €, client, encaissement, fin', async ({ page }) => {
   const errors = [];
@@ -80,18 +80,21 @@ test('parcours complet : commande de 237 €, client, encaissement, fin', async 
   await show.click();
   await expect(show).toBeHidden();
 
-  // Encaisser 100 + 100 + 50 -> à rendre 13
+  // Encaisser 100 + 100 + 50 -> à rendre 13 = 10 + 2 + 1
   await page.locator('#view').getByRole('button', { name: /^Encaisser/ }).click();
-  await expect(page.locator('.cashline').first().locator('b')).toHaveText(euro(237));
-  for (const b of ['100', '100', '50']) await page.locator('#view').getByRole('button', { name: new RegExp(`^${b}\\s*€$`) }).click();
-  const rendu = page.locator('.cashline.rendu');
-  await expect(rendu).toContainText('À rendre');
-  await expect(rendu.locator('b')).toHaveText(euro(13));
+  const chg = page.locator('#change');
+  await expect(chg.locator('.cs b.pay')).toHaveText(euro(237));
+  for (const b of [100, 100, 50]) await chg.getByRole('button', { name: `${b} €`, exact: true }).click();
+  await chg.getByRole('button', { name: 'Valider' }).click();
+  await expect(chg.locator('.chg-res')).toContainText('À rendre');
+  await expect(chg.locator('.chg-res .big')).toHaveText(euro(13));
 
-  // Terminé
-  await page.locator('#view').getByRole('button', { name: /Terminé/ }).click();
+  // Terminé : tout est remis à zéro, retour à la page de lancement
+  await chg.getByRole('button', { name: /Terminé/ }).click();
+  await expect(chg).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'Que veux-tu faire ?' })).toBeVisible();
+  await enterOrder(page);
   await expect(bar(page)).toContainText('Commande vide');
-  await expect(page.getByRole('heading', { name: /Qu’est-ce que tu bois/ })).toBeVisible();
   await expect(page.locator('#cur-order')).toContainText('Aucune boisson pour l’instant');
   await page.locator('#view').getByRole('button', { name: /^Bière/ }).click();
   await bar(page).click();
@@ -106,9 +109,14 @@ test('rendu monnaie : il manque quand le client donne trop peu', async ({ page }
   await page.locator('#view').getByRole('button', { name: /Heineken/ }).click();
   await bar(page).click();
   await page.locator('#view').getByRole('button', { name: /^Encaisser/ }).click();
-  await page.locator('#view').getByRole('button', { name: /^5\s*€$/ }).first().click(); // 5 € = compte juste
-  await expect(page.locator('.cashline.rendu b')).toHaveText(euro(0));
-  await page.locator('#view').getByRole('button', { name: 'Effacer' }).click();
-  await expect(page.locator('.cashline.rendu')).toContainText('Il manque');
-  await expect(page.locator('.cashline.rendu b')).toHaveText(euro(5));
+  const chg = page.locator('#change');
+  await chg.getByRole('button', { name: '2 €', exact: true }).click();
+  await expect(chg.locator('.st')).toContainText('Il manque');
+  await expect(chg.locator('.st b')).toHaveText(euro(3));
+  await expect(chg.getByRole('button', { name: 'Valider' })).toBeDisabled();
+  await chg.getByRole('button', { name: /Annuler/ }).click();
+  await chg.getByRole('button', { name: '5 €', exact: true }).click(); // 5 € = compte juste
+  await chg.getByRole('button', { name: 'Valider' }).click();
+  await expect(chg.locator('.chg-res')).toContainText('Compte juste');
+  await expect(chg.locator('.chg-give')).toContainText('Rien à rendre');
 });
