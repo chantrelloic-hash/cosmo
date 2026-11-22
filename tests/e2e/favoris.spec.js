@@ -93,7 +93,7 @@ test('les plus vendus : commande complète depuis l’accueil, total 97 € en b
   await cur(page).getByRole('button', { name: 'Encaisser' }).click();
   await expect(page.getByRole('heading', { name: 'Rendre la monnaie' })).toBeVisible();
   await expect(page.locator('#change .cs b.pay')).toHaveText(euro(97));
-  await page.locator('#change').getByRole('button', { name: 'Fermer' }).click();
+  await page.locator('#change').getByRole('button', { name: 'Retour' }).click();
   await expect(cur(page).locator('.total b')).toHaveText(euro(97));
 
   // Nouveau client (en haut) : vide tout

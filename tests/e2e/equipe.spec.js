@@ -28,7 +28,7 @@ test('calculatrice : uniquement les tarifs de la carte, avec leur rappel, boutei
   await calc.getByRole('button', { name: 'Bouteille 140 €' }).click();
   await expect(total).toHaveText(euro(172));
   await expect(calc.locator('.ck[data-p="3"]')).toBeVisible();
-  await expect(calc.getByRole('button', { name: /Retour/ })).toHaveCount(0);
+  await expect(calc.locator('.calc-keys').getByRole('button', { name: /Retour/ })).toHaveCount(0); // pas de bouton retour dans le choix
   /* ouvert par erreur : « Annuler » referme le choix sans rien retirer */
   await calc.getByRole('button', { name: 'Bouteilles' }).click();
   await calc.getByRole('button', { name: /Annuler/ }).click();
@@ -49,7 +49,7 @@ test('calculatrice : uniquement les tarifs de la carte, avec leur rappel, boutei
   expect(box.height).toBeGreaterThanOrEqual(843);
   await noHorizontalScroll(page);
 
-  await calc.getByRole('button', { name: 'Fermer' }).click();
+  await calc.getByRole('button', { name: 'Retour' }).click();
   await expect(calc).toBeHidden();
   await expect(page.locator('#bar')).toContainText('Commande vide');
 });
@@ -67,7 +67,7 @@ test('calculatrice : un prix changé dans les réglages devient une touche ; lan
   const calc = page.getByRole('dialog', { name: 'Calculator' });
   await expect(calc.locator('.ck[data-p="6"]')).toContainText('Heineken');
   await expect(calc.locator('.ck[data-p="5"]')).not.toContainText('Heineken');
-  await expect(calc.getByRole('button', { name: 'Close' })).toBeVisible();
+  await expect(calc.getByRole('button', { name: 'Back' })).toBeVisible();
 });
 
 test('ouverture : 9 étapes à cocher, gardées sur le téléphone, « Recommencer » avec confirmation', async ({ page }) => {
@@ -152,7 +152,7 @@ test('lancement : 4 grands boutons qui mènent à la commande, à la calculatric
   /* calculatrice : par-dessus le lancement, « Fermer » y revient */
   await tiles.nth(1).click();
   await expect(page.getByRole('dialog', { name: 'Calculatrice' })).toBeVisible();
-  await page.getByRole('button', { name: 'Fermer' }).click();
+  await page.getByRole('button', { name: 'Retour' }).click();
   await expect(page.getByRole('heading', { name: 'Que veux-tu faire ?' })).toBeVisible();
 
   /* ouverture, puis retour */
@@ -189,7 +189,7 @@ test('calculatrice et écran client partagent la même commande ; « Nouveau cli
   await expect(calc.getByRole('button', { name: /Annuler/ })).toBeDisabled();
   await calc.getByRole('button', { name: '15 €', exact: true }).click();
   await calc.getByRole('button', { name: '15 €', exact: true }).click();
-  await calc.getByRole('button', { name: 'Fermer' }).click();
+  await calc.getByRole('button', { name: 'Retour' }).click();
 
   /* écran client : une ligne par prix de la calculatrice, avec − / + */
   await expect(cur.locator('.total b')).toHaveText(euro(40));
@@ -217,7 +217,7 @@ test('calculatrice et écran client partagent la même commande ; « Nouveau cli
   await calc.getByRole('button', { name: 'Nouveau client' }).click();
   await expect(total).toHaveText(euro(0));
   await expect(calc.locator('.calc-tape')).toContainText('Touche les prix');
-  await calc.getByRole('button', { name: 'Fermer' }).click();
+  await calc.getByRole('button', { name: 'Retour' }).click();
   await expect(cur.locator('.total b')).toHaveText(euro(0));
   await expect(page.getByRole('button', { name: 'Nouveau client' })).toBeDisabled();
 });
@@ -229,7 +229,7 @@ test('rendre la monnaie : 4e bouton, lié à la commande et à la calculatrice ;
   const calc = page.getByRole('dialog', { name: 'Calculatrice' });
   await calc.getByRole('button', { name: '15 €', exact: true }).click();
   await calc.getByRole('button', { name: '7 €', exact: true }).click(); // total 27 €
-  await calc.getByRole('button', { name: 'Fermer' }).click();
+  await calc.getByRole('button', { name: 'Retour' }).click();
   await page.getByRole('button', { name: 'Retour' }).click();
 
   const tile = page.locator('#view .lt-change');
@@ -294,7 +294,7 @@ test('écran principal : choix de la langue en haut, en petit', async ({ page })
   await page.locator('#view .lt-order').click();
   await expect(page.getByRole('heading', { name: 'O que você vai beber?' })).toBeVisible();
   await expect(page.locator('#hlangs')).toBeHidden();
-  await page.getByRole('button', { name: 'Retour' }).click();
+  await page.getByRole('button', { name: 'Voltar' }).click();
   await page.getByRole('group', { name: 'Idioma' }).getByRole('button', { name: 'English' }).click();
   await expect(page.getByRole('heading', { name: 'What do you want to do?' })).toBeVisible();
   /* tient sur l'écran, même sur un très petit téléphone */

@@ -291,24 +291,12 @@ const V = {
       ${inclus}
       <div class="actions" style="margin-top:20px"><button class="cta" ${ready?'':'disabled'} ${on(()=>{ if(!ready) return; add(bottleItem(b,c)); state.stack.pop(); render(true);})}>${ready?T('addBottle',eur(price)):T('chooseJuice')}</button></div>`;
   },
-  order(){
-    if(!state.order.length) return `<h1>Commande</h1><div class="empty">Rien pour l’instant.<br><br><button class="cta ghost" ${on(home)}>Choisir une boisson</button></div>`;
-    return `<h1>Commande</h1>
-      <div class="rows">${state.order.map(i=>`<div class="row">
-        <div class="step"><button aria-label="Retirer un" ${on(()=>bump(i,-1))}>−</button><output>${i.qty}</output><button aria-label="Ajouter un" ${on(()=>bump(i,1))}>+</button></div>
-        <div class="l">${esc(i.label)}${i.sub?`<small>${esc(i.sub)}</small>`:''}</div>
-        <div class="lp price-num">${eur(i.qty*i.price)}</div></div>`).join('')}</div>
-      <div class="total"><span>Total</span><b class="price-num">${eur(total())}</b></div>
-      <div class="actions">
-        <button class="cta" ${on(showCustomer)}>Montrer au client</button>
-        <button class="cta ghost" ${on(openChange)}>Encaisser · rendu monnaie</button>
-      </div>`;
-  },
+  order(){ return curOrderHTML(true); },
   opening(){
     const done=openDone(), n=done.length, all=n===OPEN_STEPS.length;
     const restart = state.openConfirm
-      ? `<span class="oq">${T('openConfirm')}</span><button class="opbtn yes" ${on(()=>{state.openConfirm=false; saveOpen([]); render(false);})}>${T('yes')}</button><button class="opbtn" ${on(()=>{state.openConfirm=false; render(false);})}>${T('no')}</button>`
-      : `<button class="opbtn" ${n?'':'disabled'} ${on(()=>{state.openConfirm=true; render(false);})}>${T('openRestart')}</button>`;
+      ? `<span class="oq">${T('openConfirm')}</span><button class="sbtn danger" ${on(()=>{state.openConfirm=false; saveOpen([]); render(false);})}>${T('yes')}</button><button class="sbtn" ${on(()=>{state.openConfirm=false; render(false);})}>${T('no')}</button>`
+      : `<button class="sbtn" ${n?'':'disabled'} ${on(()=>{state.openConfirm=true; render(false);})}>${T('openRestart')}</button>`;
     return `<h1>${T('openTitle')}</h1><p class="hint">${T('openHint')}</p>
       <div class="opprog" role="status"><b class="price-num">${n}<small> / ${OPEN_STEPS.length}</small></b>
         <span class="opbar" aria-hidden="true"><i style="width:${n/OPEN_STEPS.length*100}%"></i></span>
@@ -363,14 +351,18 @@ function favsHTML(){
 }
 
 /** Section « Commande en cours » (fin de l'accueil) : lignes, total, actions. */
-function curOrderHTML(){
-  const rows = state.order.map(i=>`<div class="row h">
-      <div class="l"><b class="price-num">${i.qty} ×</b> ${esc(i.label)}${i.sub?` <small>${esc(i.sub)}</small>`:''}</div>
+/** Lignes de la commande (mêmes partout : « Commande en cours » et écran Commande). */
+function rowsHTML(){
+  return state.order.map(i=>`<div class="row h">
+      <div class="l"><b class="price-num"><output>${i.qty}</output> ×</b> ${esc(i.label)}${i.sub?` <small>${esc(i.sub)}</small>`:''}</div>
       <div class="lp price-num">${eur(linePrice(i.price,i.qty))}</div>
       <div class="step"><button aria-label="${T('lessOne')}" ${on(()=>bump(i,-1))}>−</button><button aria-label="${T('moreOne')}" ${on(()=>bump(i,1))}>+</button></div></div>`).join('');
+}
+/** « Commande en cours » : sous-titre de section sur l'écran client, titre de page sur l'écran Commande. */
+function curOrderHTML(asPage){
   return `<section id="cur-order" class="cur" aria-label="${T('curOrder')}">
-    <h2 class="sec">${T('curOrder')}</h2>
-    ${state.order.length?`<div class="rows">${rows}</div>`:`<p class="none">${T('noDrinks')}</p>`}
+    ${asPage?`<h1>${T('curOrder')}</h1>`:`<h2 class="sec">${T('curOrder')}</h2>`}
+    ${state.order.length?`<div class="rows">${rowsHTML()}</div>`:`<p class="none">${T('noDrinks')}</p>`}
     <div class="total"><span>${T('total')}</span><b class="price-num">${eur(total())}</b></div>
     <div class="actions"${state.order.length?'':' hidden'}>
       <button class="cta" ${on(showCustomer)}>${T('showClient')}</button>
@@ -480,9 +472,8 @@ function drawCalc(bump){
         <span class="ckl"><span class="kl" style="--c:var(--bottle)"><i></i><span class="price-num">${bprices.map(p=>`<b>${p}</b>`).join(' · ')} €</span></span></span></button>`:''}</div>`;
   }
   calcEl.innerHTML = `<div class="calc-in">
-    <div class="calc-top"><h1 id="calcH">${T('calcTitle')}</h1>
-      <button class="newc" data-c="new" ${state.order.length?'':'disabled'}>${NEW_ICON}<span>${T('newClient')}</span></button>
-      <button class="calc-x" data-c="close">${T('calcClose')}</button></div>
+    ${overlayTop('data-c="close"',`<button class="newc" data-c="new" ${state.order.length?'':'disabled'}>${NEW_ICON}<span>${T('newClient')}</span></button>`)}
+    <h1 id="calcH" class="oh">${T('calcTitle')}</h1>
     <div class="calc-screen">
       <div class="calc-tape">${tape.length ? tape.join('<i>+</i>') : `<span class="none">${T('calcHint')}</span>`}</div>
       <output class="calc-total price-num${bump?' bump':''}" aria-live="polite">${eur(total())}</output>
@@ -509,7 +500,7 @@ function openCalc(){
   if(!standalone && !document.fullscreenElement && document.documentElement.requestFullscreen){
     document.documentElement.requestFullscreen({navigationUI:'hide'}).then(()=>{calcFs=true;}).catch(()=>{});
   }
-  calcEl.querySelector('.calc-x').focus();
+  calcEl.querySelector('.otop .back').focus();
 }
 function closeCalc(){
   calcEl.hidden=true; calcEl.innerHTML='';
@@ -537,6 +528,13 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !calcEl.hidden) 
 document.getElementById('calcBtn').onclick=openCalc;
 document.getElementById('newBtn').onclick=newClient;
 
+/** En-tête des écrans plein écran : le même que les autres écrans (← rond, logo, actions à droite). */
+function overlayTop(closeAttr, actions=''){
+  return `<header class="top otop"><button class="back" ${closeAttr} aria-label="${T('back')}">&larr;</button>
+    <div class="mark" aria-hidden="true"><b>C<i>O</i>SMO</b><small>Kourou · Guyane</small></div>
+    <div class="spacer"></div>${actions}</header>`;
+}
+
 /* ============ RENDRE LA MONNAIE (plein écran) ============
    Lié à la commande : « À payer » = total de la commande (écran client + calculatrice).
    On touche ce que le client donne (billets 5 à 100 €, pièces 1 et 2 €), « Valider » affiche
@@ -552,7 +550,7 @@ const money = (v, cls='') => v<=2
 function drawChange(){
   const t=total(), rec=given.reduce((a,b)=>a+b,0), r=changeDue(rec,t);
   const qty=v=>given.filter(x=>x===v).length;
-  const top=`<div class="calc-top"><h1 id="chgH">${T('changeTitle')}</h1><button class="calc-x" data-g="close">${T('calcClose')}</button></div>`;
+  const top=`${overlayTop('data-g="close"')}<h1 id="chgH" class="oh">${T('changeTitle')}</h1>`;
   if(changeStep==='result'){
     const parts=changeBreakdown(r);
     chgEl.innerHTML=`<div class="calc-in chg">${top}
@@ -580,7 +578,7 @@ function drawChange(){
       <div class="cs"><span>${T('received')}</span><b class="price-num">${eur(rec)}</b></div>
       ${status}
     </div>
-    <p class="chg-hint">${T('changeHint')}</p>
+    <p class="hint oh">${T('changeHint')}</p>
     <div class="chg-pad">
       ${BILLS.map(v=>`<button class="mb" data-g="add" data-v="${v}" aria-label="${v} €">${money(v)}${qty(v)?`<span class="qty price-num">${qty(v)}</span>`:''}</button>`).join('')}
       <div class="mcoins">${COINS.map(v=>`<button class="mb" data-g="add" data-v="${v}" aria-label="${v} €">${money(v)}${qty(v)?`<span class="qty price-num">${qty(v)}</span>`:''}</button>`).join('')}</div>
@@ -594,7 +592,7 @@ function openChange(){
   if(!RAW) return;
   changeStep='give'; chgEl.hidden=false; drawChange();
   document.documentElement.classList.add('calc-open');
-  chgEl.querySelector('.calc-x').focus();
+  chgEl.querySelector('.otop .back').focus();
 }
 function closeChange(){
   chgEl.hidden=true; chgEl.innerHTML='';
@@ -643,6 +641,8 @@ function render(scroll){
   const wrap=document.querySelector('.bar');
   wrap.hidden = noBar;
   document.getElementById('calcBtn').setAttribute('aria-label', T('calcTitle'));
+  document.getElementById('back').setAttribute('aria-label', T('back'));
+  document.getElementById('reset').textContent = T('homeBtn');
   document.getElementById('calcBtn').hidden = top.v==='launch';
   document.body.classList.toggle('is-launch', top.v==='launch');
   if(top.v==='launch') fitLaunch();

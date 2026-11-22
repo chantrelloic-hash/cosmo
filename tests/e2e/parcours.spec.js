@@ -98,7 +98,8 @@ test('parcours complet : commande de 237 €, client, encaissement, fin', async 
   await expect(page.locator('#cur-order')).toContainText('Aucune boisson pour l’instant');
   await page.locator('#view').getByRole('button', { name: /^Bière/ }).click();
   await bar(page).click();
-  await expect(page.getByText('Rien pour l’instant.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Commande en cours' })).toBeVisible();
+  await expect(page.locator('#view')).toContainText('Aucune boisson pour l’instant');
 
   expect(errors, 'erreurs JS / console').toEqual([]);
 });
