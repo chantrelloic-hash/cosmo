@@ -1,8 +1,9 @@
 import {
   glassPrice, countSofts, extraSofts, bottlePrice, orderTotal, orderCount, changeDue,
   parsePrice, applyOverride, mergeOverride, sanitizeOverrides, removeFromOrder, sanitizeOrder,
-  linePrice, addToOrder,
+  linePrice, addToOrder, priceKeys, tapeGroups,
 } from './pricing.js';
+import { OPEN_STEPS } from './ouverture.js';
 import { KEYS, read, write, remove } from './store.js';
 import { t, w, isLang, LANGS, LANG_NAMES, HTML_LANG, DEFAULT_LANG } from './i18n.js';
 
@@ -174,7 +175,8 @@ const V = {
         ${cat('--spirit','glass',T('catSpirit'),fmt(range(SPIRITS)),'spirits')}
         ${cat('--bottle','bottle',T('catBottle'),fmt([Math.min(...bottlePrices),Math.max(...bottlePrices)]),'bottles')}
       </div>
-      ${curOrderHTML()}`;
+      ${curOrderHTML()}
+      ${teamHTML()}`;
   },
   beers(){ return `<h1>${T('beersH1')}</h1><p class="hint">${T('beersHint')}</p><div class="grid">${BEERS.map(b=>brandCard(b,'biere')).join('')}</div>`; },
   softs(){ return `<h1>${T('softsH1')}</h1><p class="hint">${T('softsHint')}</p><div class="grid">${SOFTS.map(b=>brandCard(b,'soft')).join('')}</div>`; },
@@ -283,6 +285,26 @@ const V = {
         <button class="cta danger" ${on(()=>{state.order=[]; lastAdd=null; home();})}>Vider la commande</button>
       </div>`;
   },
+  opening(){
+    const done=openDone(), n=done.length, all=n===OPEN_STEPS.length;
+    const restart = state.openConfirm
+      ? `<span class="oq">${T('openConfirm')}</span><button class="opbtn yes" ${on(()=>{state.openConfirm=false; saveOpen([]); render(false);})}>${T('yes')}</button><button class="opbtn" ${on(()=>{state.openConfirm=false; render(false);})}>${T('no')}</button>`
+      : `<button class="opbtn" ${n?'':'disabled'} ${on(()=>{state.openConfirm=true; render(false);})}>${T('openRestart')}</button>`;
+    return `<h1>${T('openTitle')}</h1><p class="hint">${T('openHint')}</p>
+      <div class="opprog" role="status"><b class="price-num">${n}<small> / ${OPEN_STEPS.length}</small></b>
+        <span class="opbar" aria-hidden="true"><i style="width:${n/OPEN_STEPS.length*100}%"></i></span>
+        <span class="oprst">${restart}</span></div>
+      ${all?`<div class="opdone">${CHECK}<span>${T('openDone')}</span></div>`:''}
+      <div class="opgrid">${OPEN_STEPS.map(st=>{
+        const ok=done.includes(st.id);
+        return `<button class="opcard" aria-pressed="${ok}" ${on(()=>{ saveOpen(ok?done.filter(x=>x!==st.id):[...done,st.id]); render(false); })}>
+          <span class="opart">${st.svg(T)}</span>
+          <span class="opbody"><span class="opn price-num">${st.n}</span>
+            <span class="optx"><span class="opt">${T('op'+st.n+'T')}</span><span class="opd">${T('op'+st.n+'D')}</span></span>
+            <span class="optick" aria-hidden="true">${CHECK}</span>
+            ${ok?`<span class="sr">${T('stepDone')}</span>`:''}</span>
+        </button>`;}).join('')}</div>`;
+  },
   cash(){
     const t=total(), r=changeDue(state.received,t);
     const bills=[{v:5,bg:'#B8B0A6'},{v:10,bg:'#E58B7A'},{v:20,bg:'#7FA8E0'},{v:50,bg:'#F2A65A'},{v:100,bg:'#7BC77A'}];
@@ -383,6 +405,120 @@ function pickSpirit(s){
   go('mixer',s);
 }
 
+/* ============ POUR L'ÉQUIPE : pense-bête d'ouverture et calculatrice ============ */
+const CHECK = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const CALC_ICON = document.getElementById('calcBtn').innerHTML;
+const OPEN_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="19" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 3.5h6v3H9z" fill="currentColor"/><path d="M7.5 12l2 2 3.5-3.5M7.5 17.5l2 2 3.5-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+/** Étapes d'ouverture cochées (ids connus seulement). */
+function openDone(){
+  const ids=OPEN_STEPS.map(s=>s.id), v=read(KEYS.opening, []);
+  return Array.isArray(v) ? v.filter(x=>ids.includes(x)) : [];
+}
+function saveOpen(list){ if(list.length) write(KEYS.opening, list); else remove(KEYS.opening); }
+
+function teamHTML(){
+  const n=openDone().length;
+  return `<h2 class="sec">${T('teamH')}</h2>
+    <div class="grid team">
+      <button class="tool" style="--c:var(--flame)" ${on(openCalc)}><span class="ti">${CALC_ICON}</span><span><b>${T('calcTitle')}</b><small>${T('calcSub')}</small></span></button>
+      <button class="tool" style="--c:var(--soft)" ${on(()=>{state.openConfirm=false; go('opening');})}><span class="ti">${OPEN_ICON}</span><span><b>${T('openTitle')}</b><small class="price-num">${T('openSub',n)}</small></span></button>
+    </div>`;
+}
+
+/* Calculatrice plein écran : uniquement les tarifs de la carte (prix des réglages compris),
+   chaque touche rappelle ce qu'elle représente. Le ruban reste en mémoire jusqu'à « Effacer ». */
+const calcEl = document.getElementById('calc');
+let calcTape = [], calcFs = false;
+const KIND = {beer:'--beer', soft:'--soft', glass:'--spirit', neat:'--flame', bottle:'--bottle', supplement:'--soft'};
+/* Touches : un prix par touche, sauf les bouteilles, regroupées sur une seule touche qui ouvre le choix du prix. */
+function calcKeys(){
+  return priceKeys({beers:BEERS, softs:SOFTS, spirits:SPIRITS, softSupplement:SOFT_SUPPLEMENT});
+}
+function calcBottleKeys(){
+  return priceKeys({bottles:BOTTLES.map(t=>({price:t.price, items:t.items}))});
+}
+const calcNames = g => g.names.map(x=>esc(W(x).replace(/­/g,'')));
+/** Une ligne de rappel sous le prix : type (couleur de la famille) puis noms ; au-delà de 3 noms, le premier et « +n ». */
+function keyLine(g){
+  const names=calcNames(g);
+  const list=names.length>3 ? `${names[0]} <em>+${names.length-1}</em>` : names.join(', ');
+  const lbl={beer:T('kBeer',names.length), soft:T('kSoft',names.length), glass:T('kGlass'), neat:'', bottle:T('kBottle'), supplement:T('kSupp')}[g.kind];
+  const txt=g.kind==='supplement' ? '' : list;
+  return `<span class="kl" style="--c:var(${KIND[g.kind]})"><i></i><span>${lbl?`<b>${esc(lbl)}</b> `:''}${txt}</span></span>`;
+}
+let calcView = 'keys'; // 'keys' ou 'bottles' (choix du prix de la bouteille)
+function drawCalc(bump){
+  const groups=tapeGroups(calcTape), sum=calcTape.reduce((a,b)=>a+b,0);
+  let pad;
+  if(calcView==='bottles'){
+    const bk=calcBottleKeys();
+    pad = `<div class="calc-keys bottles" style="grid-template-rows:auto repeat(${bk.length},1fr)">
+      <div class="cbh"><b>${T('calcWhichBottle')}</b></div>
+      ${bk.map(k=>`<button class="ck cb" style="--c:var(--bottle)" data-c="add" data-p="${k.price}" aria-label="${T('kBottle')} ${k.price} €">
+        <span class="ckp price-num">${k.price}<small>€</small></span>
+        <span class="cbn">${calcNames(k.groups[0]).join(', ')}</span></button>`).join('')}</div>`;
+  } else {
+    const keys=calcKeys(), bk=calcBottleKeys(), n=keys.length+(bk.length?1:0);
+    const bprices=bk.map(k=>k.price);
+    pad = `<div class="calc-keys" style="grid-template-rows:repeat(${Math.ceil(n/2)},1fr)">${keys.map(k=>`<button class="ck" style="--c:var(${KIND[k.groups[0].kind]})" data-c="add" data-p="${k.price}" aria-label="${k.price} €">
+      <span class="ckp price-num">${k.price}<small>€</small></span>
+      <span class="ckl">${k.groups.map(keyLine).join('')}</span></button>`).join('')}
+      ${bk.length?`<button class="ck ckb" style="--c:var(--bottle)" data-c="bottles" aria-label="${T('kBottles')}">
+        <span class="ckp">${T('kBottles')}</span>
+        <span class="ckl"><span class="kl" style="--c:var(--bottle)"><i></i><span class="price-num">${bprices.map(p=>`<b>${p}</b>`).join(' · ')} €</span></span></span></button>`:''}</div>`;
+  }
+  calcEl.innerHTML = `<div class="calc-in">
+    <div class="calc-top"><h1 id="calcH">${T('calcTitle')}</h1><button class="calc-x" data-c="close">${T('calcClose')}</button></div>
+    <div class="calc-screen">
+      <div class="calc-tape">${groups.length ? groups.map(g=>`<span class="price-num">${eur(g.price)}${g.qty>1?` <b>×${g.qty}</b>`:''}</span>`).join('<i>+</i>') : `<span class="none">${T('calcHint')}</span>`}</div>
+      <output class="calc-total price-num${bump?' bump':''}" aria-live="polite">${eur(sum)}</output>
+    </div>
+    ${pad}
+    <div class="calc-act">
+      ${calcView==='bottles'
+        ? `<button class="cta ghost" data-c="keys">← ${T('undo')}</button>`
+        : `<button class="cta ghost" data-c="undo" ${calcTape.length?'':'disabled'}>← ${T('undo')}</button>`}
+      <button class="cta danger" data-c="clear" ${calcTape.length?'':'disabled'}>${T('clear')}</button>
+    </div></div>`;  fitCalc();
+}
+/** Si le texte d'une touche dépasse (petit écran, langue plus longue), resserre l'affichage d'un ou deux crans. */
+function fitCalc(){
+  const pad=calcEl.querySelector('.calc-keys'); if(!pad) return;
+  const over=()=>[...pad.querySelectorAll('.ck')].some(k=>k.scrollHeight>k.clientHeight+1);
+  for(const c of ['fit1','fit2']){ if(!over()) return; pad.classList.add(c); }
+}
+function openCalc(){
+  if(!RAW) return;
+  calcView='keys'; calcEl.hidden=false; drawCalc(false);
+  document.documentElement.classList.add('calc-open');
+  /* Plein écran du navigateur quand c'est possible (Android) ; sur iPhone, l'appli installée l'est déjà. */
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if(!standalone && !document.fullscreenElement && document.documentElement.requestFullscreen){
+    document.documentElement.requestFullscreen({navigationUI:'hide'}).then(()=>{calcFs=true;}).catch(()=>{});
+  }
+  calcEl.querySelector('.calc-x').focus();
+}
+function closeCalc(){
+  calcEl.hidden=true; calcEl.innerHTML='';
+  document.documentElement.classList.remove('calc-open');
+  if(calcFs && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+  calcFs=false;
+  document.getElementById('calcBtn').focus();
+}
+calcEl.addEventListener('click',e=>{
+  const b=e.target.closest('[data-c]'); if(!b || b.disabled) return;
+  const a=b.dataset.c;
+  if(a==='close') return closeCalc();
+  if(a==='bottles'||a==='keys'){ calcView=a; return drawCalc(false); }
+  if(a==='add'){ calcTape.push(+b.dataset.p); calcView='keys'; try{ if(navigator.vibrate) navigator.vibrate(12); }catch(_){} }
+  if(a==='undo') calcTape.pop();
+  if(a==='clear') calcTape=[];
+  drawCalc(a==='add');
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !calcEl.hidden) closeCalc(); });
+document.getElementById('calcBtn').onclick=openCalc;
+
 function showCustomer(){
   const el=document.getElementById('show');
   el.innerHTML = state.order.map(i=>`<div class="ln"><span>${i.qty} × ${esc(i.label)}${i.sub?' '+esc(i.sub):''}</span><b class="price-num">${eur(i.qty*i.price)}</b></div>`).join('')
@@ -403,9 +539,11 @@ function render(scroll){
   const summary = isHome ? T('items',n) : state.order.map(i=>`${i.qty} ${esc(i.label)}`).join(', ');
   bar.className = n ? '' : 'off';
   bar.innerHTML = `<span class="n">${n}</span><span class="lbl">${n?summary:T('emptyOrder')}</span><span class="tt price-num">${eur(total())}</span>`;
-  bar.hidden = top.v==='order'||top.v==='cash';
+  const noBar = top.v==='order'||top.v==='cash'||top.v==='opening';
+  bar.hidden = noBar;
   const wrap=document.querySelector('.bar');
-  wrap.hidden = top.v==='order'||top.v==='cash';
+  wrap.hidden = noBar;
+  document.getElementById('calcBtn').setAttribute('aria-label', T('calcTitle'));
   wrap.classList.toggle('mini', isHome);
   watchOrderSection(isHome);
   if(scroll) window.scrollTo(0,0);

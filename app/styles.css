@@ -357,3 +357,128 @@ h2.sec.fire::before{content:"";width:10px;height:10px;border-radius:50%;backgrou
 .favs .pic.photo{width:48px;height:108px}
 .favs .pic.photo img{max-height:108px}
 .bigbtn .mxi.photo{width:44px;height:64px}
+
+/* ============ Pour l'équipe : accès (accueil + en-tête) ============ */
+.calcbtn{width:52px;height:52px;flex:none;border-radius:16px;border:2px solid var(--line);display:grid;place-items:center;color:var(--flame);background:var(--panel)}
+.calcbtn svg{width:26px;height:26px}
+.calcbtn:active{transform:scale(.95)}
+.team{margin-bottom:8px}
+.tool{--c:var(--flame);display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-height:128px;padding:16px;border-radius:var(--r);text-align:left;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--c) 16%,var(--panel)),var(--panel) 70%);border:2px solid color-mix(in srgb,var(--c) 40%,var(--line))}
+.tool .ti{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--c);color:var(--space)}
+.tool .ti svg{width:28px;height:28px}
+.tool b{display:block;font-family:var(--display);font-weight:700;font-size:16px;line-height:1.15}
+.tool small{display:block;margin-top:4px;color:var(--muted);font-size:13.5px}
+.tool:active{transform:scale(.97)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ============ Calculatrice plein écran ============
+   Colonne pleine hauteur : en-tête, écran (ruban + total énorme), touches qui remplissent le reste, actions. */
+html.calc-open,html.calc-open body{overflow:hidden}
+.calc{position:fixed;inset:0;z-index:55;background:
+    radial-gradient(90% 40% at 50% 0%,#241d5c 0%,transparent 70%),var(--space);
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.calc-in{box-sizing:border-box;height:100%;max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:12px;
+  padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));padding-block:10px 12px}
+.calc-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.calc-top h1{margin:0;font-size:22px}
+.calc-x{min-height:46px;padding:0 18px;border-radius:999px;border:2px solid var(--line);font-weight:800;font-size:15px}
+.calc-screen{flex:none;border-radius:var(--r);padding:12px 16px 10px;background:#05040f;border:2px solid var(--line);
+  box-shadow:inset 0 0 40px #0008;display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:0}
+.calc-tape{display:flex;flex-wrap:nowrap;justify-content:flex-end;align-items:center;gap:8px;min-height:22px;color:var(--muted);font-weight:700;font-size:15px;
+  width:100%;overflow:hidden;white-space:nowrap;-webkit-mask-image:linear-gradient(90deg,transparent,#000 24px);mask-image:linear-gradient(90deg,transparent,#000 24px)}
+.calc-tape>*{flex:none}
+.calc-tape i{font-style:normal;color:var(--flame)}
+.calc-tape b{color:var(--ink)}
+.calc-tape .none{font-weight:600}
+.calc-total{font-family:var(--display);font-weight:900;font-size:clamp(44px,min(17vw,11vh),96px);line-height:1;color:var(--flame);
+  text-shadow:0 0 28px color-mix(in srgb,var(--flame) 45%,transparent);white-space:nowrap}
+.calc-total.bump{animation:bump .18s ease-out}
+@keyframes bump{from{transform:scale(1.06)}to{transform:scale(1)}}
+.calc-keys{flex:1;min-height:0;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;gap:clamp(6px,1.2vh,10px)}
+.ck{--c:var(--flame);position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:4px;min-width:0;min-height:0;
+  padding:clamp(6px,1.3vh,12px) 10px clamp(6px,1.3vh,12px) 14px;border-radius:18px;text-align:left;overflow:hidden;
+  background:linear-gradient(170deg,color-mix(in srgb,var(--c) 14%,var(--panel)),var(--panel) 75%);
+  border:2px solid color-mix(in srgb,var(--c) 38%,var(--line))}
+.ck::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:4px;border-radius:0 4px 4px 0;background:var(--c)}
+.ck:active{transform:scale(.96);background:color-mix(in srgb,var(--c) 28%,var(--panel))}
+.ckp{font-family:var(--display);font-weight:900;font-size:clamp(24px,min(9vw,5.6vh),44px);line-height:1;color:var(--ink)}
+.ckb .ckp{font-size:clamp(15px,min(4.6vw,2.9vh),22px);line-height:1.1;overflow-wrap:anywhere}
+.ckb .kl{font-size:clamp(13px,2vh,16px)}
+.ckb .kl b{color:var(--bottle)}
+.calc-keys.bottles{grid-template-columns:1fr}
+.cbh{display:flex;align-items:center;min-height:36px}
+.cbh b{font-family:var(--display);font-size:18px}
+.ck.cb{flex-direction:row;align-items:center;justify-content:flex-start;gap:16px}
+.ck.cb .ckp{flex:none;min-width:3.2ch;font-size:clamp(30px,min(11vw,7vh),56px)}
+.cbn{min-width:0;color:var(--muted);font-size:clamp(12px,1.9vh,15px);line-height:1.3;overflow-wrap:anywhere}
+.ckp small{font-size:.5em;margin-left:3px;color:var(--c)}
+.ckl{display:flex;flex-direction:column;gap:2px;min-width:0}
+.kl{display:flex;align-items:baseline;gap:6px;font-size:clamp(11px,1.75vh,13.5px);line-height:1.22;color:var(--muted);min-width:0}
+.kl i{flex:none;width:7px;height:7px;border-radius:50%;background:var(--c);transform:translateY(-1px)}
+.kl span{min-width:0;overflow-wrap:anywhere}
+.kl b{color:var(--ink);font-weight:800}
+.kl em{font-style:normal;color:var(--c);font-weight:800}
+.calc-act{flex:none;display:grid;grid-template-columns:1.4fr 1fr;gap:10px}
+.calc-act .cta{min-height:58px;font-size:16px}
+.calc-act .cta[disabled]{opacity:.35}
+
+/* ============ Ouverture du Cosmo (pense-bête) ============ */
+.opprog{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:4px 0 14px}
+.opprog>b{font-family:var(--display);font-weight:900;font-size:24px}
+.opprog>b small{font-size:14px;color:var(--muted);font-weight:500}
+.opbar{flex:1 1 120px;height:12px;border-radius:99px;background:var(--panel-2);overflow:hidden}
+.opbar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--flame),#FF4FB3);transition:width .3s ease}
+.oprst{display:flex;align-items:center;gap:8px}
+.oq{font-size:14px;color:var(--muted)}
+.opbtn{min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);font-weight:700;font-size:14px}
+.opbtn[disabled]{opacity:.4}
+.opbtn.yes{background:var(--warn);border-color:var(--warn);color:#1a0007}
+.opdone{display:flex;align-items:center;gap:12px;padding:16px 18px;margin-bottom:14px;border-radius:var(--r);
+  background:linear-gradient(100deg,var(--flame),#FF4FB3);color:var(--flame-ink);font-family:var(--display);font-weight:900;font-size:20px;line-height:1.15}
+.opdone svg{flex:none;width:40px;height:40px;padding:6px;border-radius:50%;background:var(--flame-ink);color:#3EE08F}
+.opgrid{display:grid;gap:14px;padding-bottom:24px}
+.opcard{display:flex;flex-direction:column;text-align:left;border-radius:var(--r);overflow:hidden;background:var(--panel);border:2px solid var(--line);transition:border-color .2s}
+.opcard:active{transform:scale(.985)}
+.opart{display:block;background:var(--panel-2);border-bottom:1px solid var(--line);padding:10px 12px 0}
+.opart svg{display:block;width:100%;height:auto;max-height:200px}
+.opbody{position:relative;display:flex;align-items:flex-start;gap:14px;padding:14px 16px 16px}
+.opn{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-family:var(--display);font-weight:900;font-size:21px;background:var(--flame);color:var(--flame-ink)}
+.optx{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.opt{font-family:var(--display);font-weight:700;font-size:18px;line-height:1.2}
+.opd{color:var(--muted);font-size:15px;line-height:1.35}
+.opd b{color:var(--ink)}
+.opd .pink{color:#FF4FB3}
+.optick{flex:none;width:44px;height:44px;border-radius:50%;border:2.5px solid var(--muted);display:grid;place-items:center;color:var(--space)}
+.optick svg{width:26px;height:26px;opacity:0}
+.opcard[aria-pressed="true"]{border-color:#3EE08F}
+.opcard[aria-pressed="true"] .optick{background:#3EE08F;border-color:#3EE08F}
+.opcard[aria-pressed="true"] .optick svg{opacity:1}
+.opcard[aria-pressed="true"] .opart,.opcard[aria-pressed="true"] .optx,.opcard[aria-pressed="true"] .opn{opacity:.45}
+.opcard[aria-pressed="true"] .opn{background:#3EE08F}
+.opcard[aria-pressed="true"] .opt{text-decoration:line-through;text-decoration-thickness:2px}
+/* Dessins (classes « o- » de ouverture.js) */
+.o-ln{fill:none;stroke:var(--ink);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.o-thin{stroke-width:2}
+.o-fp{fill:var(--panel)} .o-fp2{fill:var(--panel-2)} .o-fsp{fill:var(--space)} .o-fm{fill:#4A4690}
+.o-ff{fill:var(--flame)} .o-fs{fill:var(--soft)} .o-fk{fill:#FF4FB3} .o-fb{fill:var(--beer)}
+.o-fv{fill:var(--spirit)} .o-fbt{fill:var(--bottle)} .o-fo{fill:#3EE08F} .o-fmu{fill:var(--muted)}
+.o-sf{stroke:var(--flame)} .o-ss{stroke:var(--soft)} .o-sk{stroke:#FF4FB3}
+.o-t{font-family:var(--display);font-weight:700;fill:var(--ink)}
+.o-tb{font-family:var(--body);font-weight:800}
+@media (prefers-reduced-motion:reduce){.calc-total.bump{animation:none}.opbar i{transition:none}}
+/* Touches trop pleines (petit écran, langue plus longue) : resserrées par app.js (fit1 puis fit2) */
+.calc-keys.fit1 .ckp{font-size:clamp(20px,min(7.5vw,4.4vh),36px)}
+.calc-keys.fit1 .ck{gap:2px;padding-block:5px}
+.calc-keys.fit1 .ckl{gap:0}
+.calc-keys.fit1 .kl{font-size:11px;line-height:1.15}
+.calc-keys.fit2 .ckp{font-size:clamp(18px,min(6.5vw,3.6vh),30px)}
+.calc-keys.fit2 .kl{font-size:10px;letter-spacing:-.01em}
+/* Petits téléphones (iPhone SE…) : en-tête, écran et actions plus compacts, les touches gardent la place */
+@media (max-height:720px){
+  .calc-in{gap:8px;padding-block:6px 8px}
+  .calc-top h1{font-size:19px}
+  .calc-x{min-height:40px}
+  .calc-screen{padding:6px 14px 6px}
+  .calc-act .cta{min-height:50px}
+}

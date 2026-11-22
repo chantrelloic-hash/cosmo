@@ -32,7 +32,7 @@ test('les plus vendus : commande complète depuis l’accueil, total 97 € en b
     const h = [...document.querySelectorAll('h2.sec')].map(e => e.textContent.trim());
     return h;
   });
-  expect(order).toEqual(['Les plus vendus', 'Toute la carte', 'Commande en cours']);
+  expect(order).toEqual(['Les plus vendus', 'Toute la carte', 'Commande en cours', 'Pour l’équipe']);
   await expect(cur(page)).toContainText('Aucune boisson pour l’instant');
 
   // bières : un tap = +1, on reste sur l'accueil, toast avec Annuler, badge de quantité
