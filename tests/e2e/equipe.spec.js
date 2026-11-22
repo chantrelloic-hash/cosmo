@@ -304,3 +304,23 @@ test('écran principal : choix de la langue en haut, en petit', async ({ page })
     expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(h);
   }
 });
+
+/* La page de lancement tient sur l'écran dans les 3 langues (titres plus ou moins longs), sans texte coupé. */
+for (const [w, h] of [[390, 844], [375, 667], [320, 568]]) {
+  test(`lancement : tient sur l’écran dans les 3 langues (${w}×${h})`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await page.addInitScript(() => localStorage.setItem('cosmo.order.v1', JSON.stringify([{ key: 'calc:17', label: 'C', sub: '', price: 17, qty: 1 }])));
+    await page.goto('/');
+    for (const name of ['Português (Brasil)', 'English', 'Français']) {
+      await page.locator('#hlangs').getByRole('button', { name }).click();
+      const r = await page.evaluate(() => ({
+        sh: document.documentElement.scrollHeight, sw: document.documentElement.scrollWidth,
+        cut: [...document.querySelectorAll('#view .lt')].filter(t => {
+          const x = t.querySelector('.ltx').getBoundingClientRect(), b = t.getBoundingClientRect();
+          return x.bottom > b.bottom - 2 || x.top < b.top + 2;
+        }).length,
+      }));
+      expect(r, name).toEqual({ sh: h, sw: w, cut: 0 });
+    }
+  });
+}
