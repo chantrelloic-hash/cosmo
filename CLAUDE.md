@@ -7,7 +7,7 @@ L'interface est en français par défaut, avec un choix de langue sur l'accueil 
 ## Mise en ligne
 
 **L'appli est en ligne** : https://chantrelloic-hash.github.io/cosmo/ (dépôt public, Pages source « GitHub Actions », déploiement automatique à chaque push sur `main`).
-Vérifié le 7 novembre 2026 après la PR #4 (`CACHE_VERSION` v6 ; v7 en attente : calculatrice + ouverture) : page, `menu.json` et photos répondent 200, accueil avec « Les plus vendus », aucune erreur console.
+Vérifié le 22 novembre 2026 après la PR #6 (`CACHE_VERSION` v7) : accueil avec « Les plus vendus » et « Pour l'équipe », calculatrice (bouteilles 120 €, tout tient sans défiler), ouverture (9 cartes), aucune erreur console ni ressource en erreur.
 Une fusion dans `main` met en ligne tout de suite l'appli utilisée en service : ne fusionner qu'avec l'accord de Loïc et des tests verts, puis vérifier le site.
 Installation : iPhone, Safari → Partager → « Sur l'écran d'accueil » ; Android, Chrome → ⋮ → « Installer l'application ». Rappeler à Loïc de changer le code des réglages (appui long sur « COSMO », 1234 par défaut).
 
