@@ -1,4 +1,4 @@
-import { test, expect, openHome, euro, noHorizontalScroll } from './fixtures.js';
+import { test, expect, openHome, euro, noHorizontalScroll, enterOrder } from './fixtures.js';
 
 /* Pour l'équipe : calculatrice des tarifs (plein écran) et pense-bête d'ouverture. */
 
@@ -70,7 +70,7 @@ test('calculatrice : un prix changé dans les réglages devient une touche ; lan
 });
 
 test('ouverture : 9 étapes à cocher, gardées sur le téléphone, « Recommencer » avec confirmation', async ({ page }) => {
-  await openHome(page);
+  await page.goto('/');
   await page.getByRole('button', { name: /Ouverture du Cosmo/ }).click();
   await expect(page.getByRole('heading', { name: 'Ouverture du Cosmo' })).toBeVisible();
   const cards = page.locator('.opcard');
@@ -86,7 +86,6 @@ test('ouverture : 9 étapes à cocher, gardées sur le téléphone, « Recommenc
   await expect(page.locator('.opprog')).toContainText('2');
 
   await page.reload();
-  await expect(page.getByRole('heading', { name: /Qu’est-ce que tu bois/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /Ouverture du Cosmo/ })).toContainText('2 / 9');
   await page.getByRole('button', { name: /Ouverture du Cosmo/ }).click();
   for (let i = 0; i < 9; i++) if (i !== 0 && i !== 2) await cards.nth(i).click();
@@ -107,7 +106,7 @@ for (const [w, h, lang] of [[390, 844, 'fr'], [375, 667, 'pt'], [320, 568, 'en']
     await page.setViewportSize({ width: w, height: h });
     await page.addInitScript(l => localStorage.setItem('cosmo.prefs.v1', JSON.stringify({ lang: l })), lang);
     await page.goto('/');
-    await page.locator('#calcBtn').click();
+    await page.locator('.lt-calc').click();
     await expect(page.locator('#calc .ck').first()).toBeVisible();
     const fits = () => page.evaluate(() => {
       const bad = [];
@@ -123,3 +122,39 @@ for (const [w, h, lang] of [[390, 844, 'fr'], [375, 667, 'pt'], [320, 568, 'en']
     expect(await fits()).toEqual([]);
   });
 }
+
+test('lancement : 3 grands boutons qui mènent à la commande, à la calculatrice et à l’ouverture', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Que veux-tu faire ?' })).toBeVisible();
+  const tiles = page.locator('#view .lt');
+  await expect(tiles).toHaveCount(3);
+  await expect(tiles.nth(0)).toContainText('Prise de commande');
+  await expect(tiles.nth(1)).toContainText('Calculatrice');
+  await expect(tiles.nth(2)).toContainText('Ouverture du Cosmo');
+  await expect(page.locator('.bar')).toBeHidden();
+  await expect(page.locator('#calcBtn')).toBeHidden();
+  await noHorizontalScroll(page);
+
+  /* les 3 boutons tiennent sur l'écran, sans défiler */
+  const bottom = await tiles.nth(2).evaluate(e => e.getBoundingClientRect().bottom);
+  expect(bottom).toBeLessThanOrEqual(844);
+
+  /* commande : une commande en cours se voit sur le bouton ; « Retour » ramène au lancement */
+  await tiles.nth(0).click();
+  await page.locator('#view .fav').filter({ hasText: 'Heineken' }).click();
+  await page.getByRole('button', { name: 'Retour' }).click();
+  await expect(tiles.nth(0)).toContainText('1 article');
+  await expect(tiles.nth(0)).toContainText('5 €');
+
+  /* calculatrice : par-dessus le lancement, « Fermer » y revient */
+  await tiles.nth(1).click();
+  await expect(page.getByRole('dialog', { name: 'Calculatrice' })).toBeVisible();
+  await page.getByRole('button', { name: 'Fermer' }).click();
+  await expect(page.getByRole('heading', { name: 'Que veux-tu faire ?' })).toBeVisible();
+
+  /* ouverture, puis retour */
+  await tiles.nth(2).click();
+  await expect(page.getByRole('heading', { name: 'Ouverture du Cosmo' })).toBeVisible();
+  await page.getByRole('button', { name: 'Retour' }).click();
+  await expect(tiles).toHaveCount(3);
+});

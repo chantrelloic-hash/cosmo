@@ -13,10 +13,16 @@ export { expect };
 const euro = n => new RegExp(`^${n}\\s*€$`);
 export { euro };
 
-/** Ouvre l'accueil et attend que la carte soit chargée. */
+/** Page de lancement → « Prise de commande » : l'écran de sélection du client. */
+export async function enterOrder(page) {
+  await page.getByRole('button', { name: /Prise de commande/ }).click();
+  await expect(page.getByRole('heading', { name: /Qu’est-ce que tu bois/ })).toBeVisible();
+}
+
+/** Lance l'appli (page de lancement) puis ouvre la prise de commande. */
 export async function openHome(page) {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Qu’est-ce que tu bois/ })).toBeVisible();
+  await enterOrder(page);
 }
 
 export const bar = page => page.locator('#bar');

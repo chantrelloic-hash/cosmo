@@ -1,4 +1,4 @@
-import { test, expect, euro, openHome, bar } from './fixtures.js';
+import { test, expect, euro, openHome, bar, enterOrder } from './fixtures.js';
 
 test('Annuler depuis le toast retire le dernier ajout', async ({ page }) => {
   await openHome(page);
@@ -19,7 +19,7 @@ test('la commande survit à un rechargement', async ({ page }) => {
   await page.locator('#view').getByRole('button', { name: /Corona/ }).click();
   await expect(bar(page).locator('.tt')).toHaveText(euro(14));
   await page.reload();
-  await expect(page.getByRole('heading', { name: /Qu’est-ce que tu bois/ })).toBeVisible();
+  await enterOrder(page);
   await expect(bar(page)).toContainText('2 articles');
   await expect(bar(page).locator('.tt')).toHaveText(euro(14));
   await expect(page.locator('#cur-order .row').filter({ hasText: 'Corona' })).toContainText('2 × Corona');
@@ -37,5 +37,6 @@ test('vider la commande efface aussi la sauvegarde', async ({ page }) => {
   await bar(page).click();
   await page.locator('#view').getByRole('button', { name: 'Vider la commande' }).click();
   await page.reload();
+  await enterOrder(page);
   await expect(bar(page)).toContainText('Commande vide');
 });

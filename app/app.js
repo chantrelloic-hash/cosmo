@@ -94,7 +94,7 @@ function glassIcon(liquid, kind){
   return `<svg viewBox="0 0 24 24"><path d="M4.5 3.5h15l-1.7 15.9A2 2 0 0 1 15.8 21H8.2a2 2 0 0 1-2-1.6z" fill="#ffffff26"/><path d="M6.2 10.5h11.6l-1.1 8.8a1 1 0 0 1-1 .9H8.3a1 1 0 0 1-1-.9z" fill="${liquid}"/></svg>`;
 }
 /* ============ ÉTAT ============ */
-const state = { stack:[{v:'home'}], order:sanitizeOrder(read(KEYS.order, [])), received:0 };
+const state = { stack:[{v:'launch'}], order:sanitizeOrder(read(KEYS.order, [])), received:0 };
 const eur = n => `${n} €`;
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 let A = []; // actions de l'écran courant
@@ -113,7 +113,8 @@ function pic(item, plain, fallback, cls){
 
 function go(v,p){ state.stack.push({v,p}); render(true); }
 function back(){ if(state.stack.length>1) state.stack.pop(); render(true); }
-function home(){ state.stack=[{v:'home'}]; render(true); }
+/* « Accueil » de la prise de commande : l'écran de sélection du client, au-dessus de la page de lancement. */
+function home(){ state.stack=[{v:'launch'},{v:'home'}]; render(true); }
 
 function qtyOf(key){ return state.order.filter(i=>i.key===key).reduce((s,i)=>s+i.qty,0); }
 function qtyPrefix(prefix){ return state.order.filter(i=>i.key.startsWith(prefix)).reduce((s,i)=>s+i.qty,0); }
@@ -175,8 +176,25 @@ const V = {
         ${cat('--spirit','glass',T('catSpirit'),fmt(range(SPIRITS)),'spirits')}
         ${cat('--bottle','bottle',T('catBottle'),fmt([Math.min(...bottlePrices),Math.max(...bottlePrices)]),'bottles')}
       </div>
-      ${curOrderHTML()}
-      ${teamHTML()}`;
+      ${curOrderHTML()}`;
+  },
+  /* Page de lancement : 3 grands boutons (prise de commande, calculatrice, ouverture du Cosmo). */
+  launch(){
+    const n=count(), done=openDone().length;
+    const tile=(cls,icon,title,sub,extra,fn)=>`<button class="lt ${cls}" ${on(fn)}>
+      <span class="lti">${icon}</span>
+      <span class="ltx"><span class="ltt">${title}</span><span class="lts">${sub}</span>${extra}</span>
+      <span class="ltc" aria-hidden="true">›</span></button>`;
+    return `<h1 class="lh">${T('launchH')}</h1>
+      <div class="launch">
+        ${tile('lt-order',ICON.glass,T('orderTitle'),T('orderSub'),
+          n?`<span class="ltb live price-num" aria-label="${T('curOrder')}">${T('items',n)} · ${eur(total())}</span>`:'',
+          ()=>{ state.stack.push({v:'home'}); render(true); })}
+        ${tile('lt-calc',CALC_ICON,T('calcTitle'),T('calcSub'),'',openCalc)}
+        ${tile('lt-open',OPEN_ICON,T('openTitle'),T('openCheck'),
+          `<span class="ltb price-num">${T('openSub',done)}</span>`,
+          ()=>{ state.openConfirm=false; go('opening'); })}
+      </div>`;
   },
   beers(){ return `<h1>${T('beersH1')}</h1><p class="hint">${T('beersHint')}</p><div class="grid">${BEERS.map(b=>brandCard(b,'biere')).join('')}</div>`; },
   softs(){ return `<h1>${T('softsH1')}</h1><p class="hint">${T('softsHint')}</p><div class="grid">${SOFTS.map(b=>brandCard(b,'soft')).join('')}</div>`; },
@@ -417,15 +435,6 @@ function openDone(){
 }
 function saveOpen(list){ if(list.length) write(KEYS.opening, list); else remove(KEYS.opening); }
 
-function teamHTML(){
-  const n=openDone().length;
-  return `<h2 class="sec">${T('teamH')}</h2>
-    <div class="grid team">
-      <button class="tool" style="--c:var(--flame)" ${on(openCalc)}><span class="ti">${CALC_ICON}</span><span><b>${T('calcTitle')}</b><small>${T('calcSub')}</small></span></button>
-      <button class="tool" style="--c:var(--soft)" ${on(()=>{state.openConfirm=false; go('opening');})}><span class="ti">${OPEN_ICON}</span><span><b>${T('openTitle')}</b><small class="price-num">${T('openSub',n)}</small></span></button>
-    </div>`;
-}
-
 /* Calculatrice plein écran : uniquement les tarifs de la carte (prix des réglages compris),
    chaque touche rappelle ce qu'elle représente. Le ruban reste en mémoire jusqu'à « Effacer ». */
 const calcEl = document.getElementById('calc');
@@ -533,17 +542,19 @@ function render(scroll){
   const top=state.stack[state.stack.length-1];
   document.getElementById('view').innerHTML = V[top.v](top.p);
   document.getElementById('back').hidden = state.stack.length<=1;
-  document.getElementById('reset').hidden = state.stack.length<=2;
+  document.getElementById('reset').hidden = state.stack.length<=3; /* lancement > sélection > écran > sous-écran */
   const n=count(), bar=document.getElementById('bar'), isHome=top.v==='home';
   /* accueil : petite barre (articles + total) qui mène à « Commande en cours » ; ailleurs : la barre détaillée */
   const summary = isHome ? T('items',n) : state.order.map(i=>`${i.qty} ${esc(i.label)}`).join(', ');
   bar.className = n ? '' : 'off';
   bar.innerHTML = `<span class="n">${n}</span><span class="lbl">${n?summary:T('emptyOrder')}</span><span class="tt price-num">${eur(total())}</span>`;
-  const noBar = top.v==='order'||top.v==='cash'||top.v==='opening';
+  const noBar = top.v==='order'||top.v==='cash'||top.v==='opening'||top.v==='launch';
   bar.hidden = noBar;
   const wrap=document.querySelector('.bar');
   wrap.hidden = noBar;
   document.getElementById('calcBtn').setAttribute('aria-label', T('calcTitle'));
+  document.getElementById('calcBtn').hidden = top.v==='launch';
+  document.body.classList.toggle('is-launch', top.v==='launch');
   wrap.classList.toggle('mini', isHome);
   watchOrderSection(isHome);
   if(scroll) window.scrollTo(0,0);

@@ -7,7 +7,7 @@ L'interface est en français par défaut, avec un choix de langue sur l'accueil 
 ## Mise en ligne
 
 **L'appli est en ligne** : https://chantrelloic-hash.github.io/cosmo/ (dépôt public, Pages source « GitHub Actions », déploiement automatique à chaque push sur `main`).
-Vérifié le 22 novembre 2026 après la PR #6 (`CACHE_VERSION` v7) : accueil avec « Les plus vendus » et « Pour l'équipe », calculatrice (bouteilles 120 €, tout tient sans défiler), ouverture (9 cartes), aucune erreur console ni ressource en erreur.
+Vérifié le 22 novembre 2026 après la PR #6 (`CACHE_VERSION` v7 ; v8 en attente : page de lancement) : accueil avec « Les plus vendus » et « Pour l'équipe », calculatrice (bouteilles 120 €, tout tient sans défiler), ouverture (9 cartes), aucune erreur console ni ressource en erreur.
 Une fusion dans `main` met en ligne tout de suite l'appli utilisée en service : ne fusionner qu'avec l'accord de Loïc et des tests verts, puis vérifier le site.
 Installation : iPhone, Safari → Partager → « Sur l'écran d'accueil » ; Android, Chrome → ⋮ → « Installer l'application ». Rappeler à Loïc de changer le code des réglages (appui long sur « COSMO », 1234 par défaut).
 
@@ -23,7 +23,7 @@ Installation : iPhone, Safari → Partager → « Sur l'écran d'accueil » ; An
   - `manifest.webmanifest`, `icons/` (générées par `tools/make_icons.py`), `images/` (photos produits WebP < 40 Ko, voir `app/images/README.md` ; **crédits obligatoires dans `app/images/CREDITS.md`**, Open Food Facts CC-BY-SA 3.0 + photos du Cosmo ; générées par `tools/fetch_product_images.py`).
 - `maquette/index.html` : maquette cliquable validée par Loïc au départ (référence historique, ne pas modifier ; elle n'a ni favoris, ni photos, ni langues).
 - `docs/BRAINSTORM.md` : besoin, parcours, règles de prix, plan en lots (tous faits), questions encore ouvertes.
-- `tests/unit/` (node:test) : `pricing.test.js`, `menu.test.js` (carte officielle, favoris, images, crédits), `i18n.test.js`. `tests/e2e/` (Playwright) : parcours, commande, favoris, langue, réglages, hors ligne, mise en page, équipe (calculatrice, ouverture).
+- `tests/unit/` (node:test) : `pricing.test.js`, `menu.test.js` (carte officielle, favoris, images, crédits), `i18n.test.js`. `tests/e2e/` (Playwright) : parcours, commande, favoris, langue, réglages, hors ligne, mise en page, équipe (lancement, calculatrice, ouverture).
   Les tests e2e bloquent les polices Google : vérifier aussi le rendu avec la vraie police (Unbounded, plus large) avant une mise en ligne qui touche aux textes.
 - `.github/workflows/ci.yml` (tests sur PR et `main`), `.github/workflows/pages.yml` (tests unitaires puis déploiement de `app/` sur Pages, sur push `main`).
 
@@ -32,7 +32,7 @@ Installation : iPhone, Safari → Partager → « Sur l'écran d'accueil » ; An
 ```
 npm install
 npm run serve      # http://localhost:8080 (python3 -m http.server sur app/)
-npm test           # unitaires (107) + e2e Playwright (30), doit rester vert
+npm test           # unitaires (107) + e2e Playwright (31), doit rester vert
 ```
 
 En local, `playwright.config.js` utilise `/opt/pw-browsers/chromium` s'il existe (environnement cloud) ; sinon `npx playwright install chromium`.
@@ -49,16 +49,21 @@ En local, `playwright.config.js` utilise `/opt/pw-browsers/chromium` s'il existe
   Champagne Moët : nombre de flûtes, pas de softs.
 - « William » ne fait pas partie de la carte (c'était une erreur).
 
-## Accueil : les plus vendus et la commande en cours
+## Lancement : 3 grands boutons
+
+- Au lancement (et à chaque rechargement), l'appli affiche la page **« Que veux-tu faire ? »** (vue `launch`) : **Prise de commande** (l'écran client ci-dessous ; une commande en cours s'y voit : articles · total), **Calculatrice**, **Ouverture du Cosmo** (avancement x / 9). Pas de barre du bas ni de bouton calculatrice dans l'en-tête sur cette page, qui tient sur un écran sans défiler.
+- La pile des écrans commence par `launch` ; `home()` ramène à l'écran client (`[launch, home]`), « Retour » depuis l'écran client ramène au lancement.
+
+## Accueil client : les plus vendus et la commande en cours
 
 - L'accueil montre d'abord « Les plus vendus » (`favorites` dans `menu.json` : Heineken, Desperados, Desperados Rouge en 1 tap ; Rhum et Vodka : « avec quoi ? » puis quantité 1 à 6), puis « Toute la carte » (les 4 familles), puis la section **« Commande en cours »** (lignes avec − / +, total énorme, « Montrer au client », « Encaisser », « Vider »).
 - Sur l'accueil la barre du bas est une petite barre (articles + total) qui défile vers « Commande en cours » et se masque quand cette section est visible ; sur les autres écrans, la barre détaillée ouvre l'écran Commande.
 - Marques servies au bar (photos du client) : vodka Eristoff, gin Bombay London Dry, tequila Camino Real, rhum Saint James Royal Blanc (d'autres rhums au bar, mais pas de choix de marque dans l'appli), Hennessy VS, Get 27 / 31, Baileys, Jägermeister. Ne pas ajouter de produit hors carte officielle (Malibu, Martini, Campari, Ricard...).
 - Le service worker précache toutes les images référencées par `menu.json` (cache `cosmo-images`, non vidé par `CACHE_VERSION` : pour remplacer une photo, lui donner un nouveau nom de fichier).
 
-## Pour l'équipe : calculatrice et pense-bête d'ouverture
+## Calculatrice et pense-bête d'ouverture
 
-- Accès : section « Pour l'équipe » en bas de l'accueil, et bouton calculatrice dans l'en-tête (toujours visible).
+- Accès : depuis la page de lancement, et bouton calculatrice dans l'en-tête (sur tous les écrans sauf le lancement).
 - **Calculatrice** (plein écran, `#calc`) : une touche par tarif de la carte, calculée par `priceKeys` (`pricing.js`) depuis la carte + réglages, avec le rappel des produits à ce prix ; les 3 prix de bouteilles sont réunis sur une touche « Bouteilles » qui ouvre le choix 90 / 120 / 140 € (retour automatique aux touches après le choix, pas de bouton retour ; « Annuler » referme le choix sans rien retirer). « Annuler » retire le dernier prix, « Effacer » remet à 0. Pas de saisie libre. **Tout tient sur un écran sans défiler** (touches en lignes `1fr`, resserrées par `fitCalc` si un texte déborde ; vérifié en e2e jusqu'à 320×568).
 - **Ouverture du Cosmo** : 9 étapes à cocher (volet après l'arrivée d'au moins 1 agent de sécurité, barrière, disjoncteurs à flèche rose, 2 boîtiers clim, 2 clims à la télécommande, écran des tarifs USB → « tarif » → pause, désodorisant + 2 WC, gobelets/pailles/bougies + réserve, pièces de caisse + SumUp en charge). Cases gardées sur le téléphone (`cosmo.opening.v1`) jusqu'à « Recommencer ».
 
