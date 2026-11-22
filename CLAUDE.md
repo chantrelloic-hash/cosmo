@@ -7,7 +7,7 @@ L'interface est en français par défaut, avec un choix de langue sur l'accueil 
 ## Mise en ligne
 
 **L'appli est en ligne** : https://chantrelloic-hash.github.io/cosmo/ (dépôt public, Pages source « GitHub Actions », déploiement automatique à chaque push sur `main`).
-Vérifié le 22 novembre 2026 après la PR #6 (`CACHE_VERSION` v7, puis v8 lancement, v9 note partagée, en ligne le 22 novembre ; v10 : rendre la monnaie) : accueil avec « Les plus vendus » et « Pour l'équipe », calculatrice (bouteilles 120 €, tout tient sans défiler), ouverture (9 cartes), aucune erreur console ni ressource en erreur.
+Vérifié le 22 novembre 2026 après la PR #6 (`CACHE_VERSION` v7, puis v8 lancement, v9 note partagée, en ligne le 22 novembre ; v10 rendre la monnaie, v11 langue sur l'écran principal) : accueil avec « Les plus vendus » et « Pour l'équipe », calculatrice (bouteilles 120 €, tout tient sans défiler), ouverture (9 cartes), aucune erreur console ni ressource en erreur.
 Une fusion dans `main` met en ligne tout de suite l'appli utilisée en service. **Loïc veut que chaque changement soit mis en ligne sans lui redemander** : dès que les tests (locaux et CI) sont verts, fusionner, puis vérifier le site.
 Installation : iPhone, Safari → Partager → « Sur l'écran d'accueil » ; Android, Chrome → ⋮ → « Installer l'application ». Rappeler à Loïc de changer le code des réglages (appui long sur « COSMO », 1234 par défaut).
 
@@ -32,7 +32,7 @@ Installation : iPhone, Safari → Partager → « Sur l'écran d'accueil » ; An
 ```
 npm install
 npm run serve      # http://localhost:8080 (python3 -m http.server sur app/)
-npm test           # unitaires (113) + e2e Playwright (33), doit rester vert
+npm test           # unitaires (113) + e2e Playwright (34), doit rester vert
 ```
 
 En local, `playwright.config.js` utilise `/opt/pw-browsers/chromium` s'il existe (environnement cloud) ; sinon `npx playwright install chromium`.
@@ -51,7 +51,7 @@ En local, `playwright.config.js` utilise `/opt/pw-browsers/chromium` s'il existe
 
 ## Lancement : 4 grands boutons
 
-- Au lancement (et à chaque rechargement), l'appli affiche la page **« Que veux-tu faire ? »** (vue `launch`) : **Prise de commande** (l'écran client ci-dessous ; une commande en cours s'y voit : articles · total), **Calculatrice**, **Rendre la monnaie** (« À payer · total » si commande), **Ouverture du Cosmo** (avancement x / 9). Sur les écrans courts (< 780 px de haut), les sous-titres sont masqués pour que les 4 tiennent. Pas de barre du bas ni de bouton calculatrice dans l'en-tête sur cette page, qui tient sur un écran sans défiler.
+- Au lancement (et à chaque rechargement), l'appli affiche la page **« Que veux-tu faire ? »** (vue `launch`) : **Prise de commande** (l'écran client ci-dessous ; une commande en cours s'y voit : articles · total), **Calculatrice**, **Rendre la monnaie** (« À payer · total » si commande), **Ouverture du Cosmo** (avancement x / 9). Sur les écrans courts (< 780 px de haut), les sous-titres sont masqués pour que les 4 tiennent. **Choix de la langue en haut à droite** (3 petits drapeaux dans l'en-tête, `#hlangs`, codes FR / PT / EN masqués sous 390 px) ; le choix de langue reste aussi sur l'écran client. Pas de barre du bas ni de bouton calculatrice dans l'en-tête sur cette page, qui tient sur un écran sans défiler.
 - La pile des écrans commence par `launch` ; `home()` ramène à l'écran client (`[launch, home]`), « Retour » depuis l'écran client ramène au lancement.
 
 ## Accueil client : les plus vendus et la commande en cours

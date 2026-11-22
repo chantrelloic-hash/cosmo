@@ -649,6 +649,11 @@ function render(scroll){
   nb.hidden = !isHome;
   nb.disabled = !state.order.length;
   nb.innerHTML = `${NEW_ICON}<span>${T('newClient')}</span>`;
+  /* Écran principal (lancement) : choix de la langue en petit, en haut à droite */
+  const hl=document.getElementById('hlangs');
+  hl.hidden = top.v!=='launch';
+  hl.setAttribute('aria-label', T('langLabel'));
+  hl.innerHTML = top.v==='launch' ? LANGS.map(l=>`<button class="hlang" aria-label="${LANG_NAMES[l]}" aria-pressed="${lang()===l}" ${on(()=>setLang(l))}>${FLAG[l]}<span>${l.toUpperCase()}</span></button>`).join('') : '';
   wrap.classList.toggle('mini', isHome);
   watchOrderSection(isHome);
   if(scroll) window.scrollTo(0,0);
